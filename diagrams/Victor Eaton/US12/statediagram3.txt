@@ -1,0 +1,41 @@
+@startuml
+skinparam Monochrome true
+skinparam StateBackgroundColor #F9F9F9
+skinparam DefaultTextAlignment center
+
+[*] --> LoggedOut : Buyer accesses webstore
+
+LoggedOut --> LoggedIn : Buyer logs into account
+
+state LoggedIn {
+  [*] --> NavigatingAccount : Navigates to account page
+  NavigatingAccount --> SelectingOrderHistory : Selects order history option
+}
+
+SelectingOrderHistory --> CheckingOrdersExist : System queries buyer's orders
+
+state CheckingOrdersExist <<choice>>
+CheckingOrdersExist --> NoPreviousOrders : Buyer has 0 orders [ALT1]
+CheckingOrdersExist --> DisplayingOrderList : Buyer has 1+ orders
+
+state NoPreviousOrders {
+  [*] --> NotifyingEmptyHistory : System informs no previous orders available
+  NotifyingEmptyHistory --> [*] : Returns to account dashboard
+}
+
+state DisplayingOrderList {
+  [*] --> ShowingOrders : System displays previous orders
+  ShowingOrders --> SelectingSpecificOrder : Buyer selects an individual order
+}
+
+SelectingSpecificOrder --> DisplayingOrderDetail : System retrieves items, seller, price, and status
+
+state DisplayingOrderDetail {
+  [*] --> ReviewingOrderInfo : View additional information
+  ReviewingOrderInfo --> OrderDetailAction : Option to close or inspect further
+}
+
+OrderDetailAction --> DisplayingOrderList : Returns to order list
+DisplayingOrderList --> [*] : Exits account management
+
+@enduml

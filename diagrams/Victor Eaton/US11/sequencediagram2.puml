@@ -1,0 +1,52 @@
+@startuml
+autonumber
+skinparam Monochrome true
+skinparam ParticipantBackgroundColor #F9F9F9
+
+actor Buyer
+participant "System" as System
+participant "Database" as DB
+
+== Search & Product Discovery ==
+Buyer -> System: searches for desired product
+activate System
+
+System -> DB: queryListings(productKeyword)
+activate DB
+DB --> System: returns List<Listing>
+deactivate DB
+
+System --> Buyer: displays relevant listings from sellers
+deactivate System
+
+== Listing Comparison ==
+Buyer -> System: compareListings(listings)
+activate System
+
+System -> DB: fetchListingsDetails(listingIDs)
+activate DB
+DB --> System: returns selected Listing attributes
+deactivate DB
+
+System --> Buyer: displays selected listings together for comparison
+deactivate System
+
+Buyer -> System: inspects price, description, seller info, etc.
+
+== Selection & Validation (ALT1) ==
+Buyer -> System: selects listing to purchase
+activate System
+
+System -> DB: isAvailable() [on Listing]
+activate DB
+DB --> System: returns availability status
+deactivate DB
+
+alt ALT1: Buyer selects an invalid or unavailable listing
+    System --> Buyer: informs listing unavailable & removes from comparison
+else Listing is valid and available
+    System --> Buyer: proceeds to purchase/checkout flow
+end
+deactivate System
+
+@enduml

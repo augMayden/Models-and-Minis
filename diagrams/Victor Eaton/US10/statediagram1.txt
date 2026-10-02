@@ -1,0 +1,58 @@
+@startuml
+skinparam Monochrome true
+skinparam StateBackgroundColor #F9F9F9
+skinparam DefaultTextAlignment center
+
+[*] --> Browsing : Buyer accesses webstore
+
+state Browsing {
+  [*] --> SearchingOrBrowsing
+  SearchingOrBrowsing --> ListingSelected : Selects Listing
+}
+
+ListingSelected --> CheckingAvailability : Request Purchase/Subscription
+
+state CheckingAvailability <<choice>>
+CheckingAvailability --> Unavailable : Listing.isAvailable() == false [ALT2]
+CheckingAvailability --> ValidatingPayment : Listing.isAvailable() == true
+
+state Unavailable {
+  [*] --> NotifyingUnavailable : System informs listing unavailable
+  NotifyingUnavailable --> [*] : Prevents completion / Returns to Browsing
+}
+
+state ValidatingPayment {
+  [*] --> CheckingBuyerPayment
+  CheckingBuyerPayment --> PaymentMissing : No valid payment method [ALT1]
+  CheckingBuyerPayment --> ReviewingOrder : Valid payment method present
+}
+
+state PaymentMissing {
+  [*] --> NotifyingPaymentNeeded : System informs payment required
+  NotifyingPaymentNeeded --> AddingPayment : Buyer adds/selects payment
+  AddingPayment --> ReviewingOrder : Returns to purchase process
+}
+
+state ReviewingOrder {
+  [*] --> DisplayingInfo : Review item, price, order info
+  DisplayingInfo --> SelectingPaymentMethod : Select payment method
+  SelectingPaymentMethod --> ConfirmingPurchase : Confirm purchase/subscription
+}
+
+ConfirmingProcessing --> ProcessingTransaction : Buyer confirms order
+
+state ProcessingTransaction {
+  [*] --> ChargingPayment : Payment.charge(amount)
+  ChargingPayment --> OrderCreation : Success / Create Order & OrderItems
+}
+
+ProcessingTransaction --> Success : Transaction successful
+
+state Success {
+  [*] --> NotifyingSuccess : System informs buyer of success
+  NotifyingSuccess --> AddedToAccount : Added to account & order history
+}
+
+AddedToAccount --> [*]
+
+@enduml

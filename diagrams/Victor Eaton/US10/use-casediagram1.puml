@@ -1,0 +1,44 @@
+@startuml
+skinparam monochrome true
+skinparam actorStyle hollow
+left to right direction
+
+actor Buyer
+
+rectangle "Webstore System" {
+  usecase "Search / Browse Listings" as UC1
+  usecase "Select Listing for Purchase/Subscription" as UC2
+  usecase "Check Listing Availability\n(isAvailable)" as UC3
+  usecase "Inform Unavailable & Prevent\n(ALT2)" as UC4
+  usecase "Review Order Info\n(Item, Price, Total)" as UC5
+  usecase "Check Buyer Payment Method" as UC6
+  usecase "Inform Payment Required\n(ALT1)" as UC7
+  usecase "Add or Select Payment Method" as UC8
+  usecase "Select Payment Method & Confirm" as UC9
+  usecase "Process Transaction\n(Payment.charge)" as UC10
+  usecase "Inform Success & Add to Order History\n(checkout)" as UC11
+
+  UC1 ..> UC2 : <<include>>
+  UC2 ..> UC3 : <<include>>
+  
+  UC3 ..> UC4 : <<extend>>\n(ALT2: Listing unavailable)
+  UC3 ..> UC5 : <<extend>>\n(Listing available)
+  
+  UC5 ..> UC6 : <<include>>
+  
+  UC6 ..> UC7 : <<extend>>\n(ALT1: No valid payment)
+  UC7 ..> UC8 : <<include>>
+  UC8 ..> UC5 : <<include>>\n(Returns to process)
+  
+  UC6 ..> UC9 : <<extend>>\n(Valid payment present)
+  UC9 ..> UC10 : <<include>>
+  UC10 ..> UC11 : <<include>>
+}
+
+Buyer --> UC1
+Buyer --> UC2
+Buyer --> UC5
+Buyer --> UC8
+Buyer --> UC9
+
+@enduml

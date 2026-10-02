@@ -1,0 +1,71 @@
+@startuml
+autonumber
+skinparam Monochrome true
+skinparam ParticipantBackgroundColor #F9F9F9
+
+actor Buyer
+participant "System" as System
+participant "Database" as DB
+
+== Search, Browse & Selection ==
+Buyer -> System: searches for or browses to desired listing
+activate System
+
+System -> DB: queryListings()
+activate DB
+DB --> System: returns matching Listings
+deactivate DB
+
+System --> Buyer: displays listing details
+deactivate System
+
+Buyer -> System: selects listing & chooses purchase/subscription option
+activate System
+
+== Availability Check (ALT2) ==
+System -> DB: isAvailable() [on Listing]
+activate DB
+DB --> System: returns availability status
+deactivate DB
+
+alt ALT2: Listing is unavailable
+    System --> Buyer: informs listing is unavailable & prevents completion
+else Listing is available
+    System --> Buyer: displays item, price, and order information
+    deactivate System
+
+    == Payment Verification & Review (ALT1) ==
+    Buyer -> System: reviews order info & selects payment method
+    activate System
+
+    System -> DB: checkBuyerPaymentMethods()
+    activate DB
+    DB --> System: returns payment methods
+    deactivate DB
+
+    alt ALT1: Buyer does not have a valid payment method
+        System --> Buyer: informs valid payment method is required
+        deactivate System
+        
+        Buyer -> System: adds or selects valid payment method
+        activate System
+    end
+
+    == Transaction Processing & Completion ==
+    Buyer -> System: confirms purchase or subscription
+    
+    System -> DB: charge(amount) [on Payment]
+    activate DB
+    DB --> System: transaction success (returns true)
+    deactivate DB
+
+    System -> DB: checkout() / create Order & OrderItem
+    activate DB
+    DB --> System: order and items saved to account
+    deactivate DB
+
+    System --> Buyer: informs purchase/subscription was successful & added to order history
+    deactivate System
+end
+
+@enduml
