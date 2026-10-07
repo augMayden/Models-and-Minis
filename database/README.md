@@ -1,14 +1,14 @@
-# Marketplace — Database API
+# Models and Minis — Database API
 
 MongoDB + Express + Mongoose API implementing the marketplace class diagram
 (`User` → `Seller` / `Admin` / `Buyer`, plus `Listing`, `Cart`/`CartItem`,
 `Order`/`OrderItem`, `Payment`, `RefundRequest`, `Notification`).
 
-> 📖 **Documentation** — [`API.md`](./API.md) (full endpoint reference) · [`openapi.yaml`](./openapi.yaml) (OpenAPI 3.0, import into Postman/Insomnia/Swagger UI).
+> **Documentation** — [`API.md`](./API.md) (full endpoint reference) · [`openapi.yaml`](./openapi.yaml) (OpenAPI 3.0, import into Postman/Insomnia/Swagger UI).
 
 ## Layout
 ```
-marketplace/
+database/
 ├─ docker-compose.yml        # MongoDB 7 + Mongo Express (browser UI :8082)
 ├─ .env.example              # compose secrets → copy to .env
 ├─ .gitignore
@@ -127,5 +127,3 @@ Content seeded: 6 accounts (1 admin, 3 sellers, 2 buyers), 12 listings (10 activ
 - `Listing.isAvailable()`, `Cart.calculateTotal()`, `CartItem` (lineTotal virtual),
   `Order`/`OrderItem`, `Payment.charge()` (gateway stub), `RefundRequest.approve()/deny()`.
 
-> Note: the diagram's `User.accountType {Pending,Active,Banned}` is the *account lifecycle state*
-> (kept as a field). The `{Seller,Admin,Buyer}` set is modeled as the Mongoose discriminator key `role`.
