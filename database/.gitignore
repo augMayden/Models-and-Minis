@@ -1,0 +1,20 @@
+# --- secrets / local config (never commit) ---
+.env
+api/.env
+
+# --- dependencies ---
+node_modules/
+
+# --- local database volume ---
+data/
+
+# --- logs ---
+*.log
+npm-debug.log*
+
+# --- os / editor cruft ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
