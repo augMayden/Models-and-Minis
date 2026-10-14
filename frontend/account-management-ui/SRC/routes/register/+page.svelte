@@ -4,15 +4,21 @@
     let { form } = $props();
 
     /** @param {string} type */
-    const isChecked = (type) => form?.accountTypes?.includes(type) ?? false;
+    const isChecked = (type) => {
+        // Explicitly check if accountTypes exists and is an array before checking includes
+        if (!form || !form.accountTypes) return false;
+        return form.accountTypes.includes(type);
+    };
 </script>
 
 <main style="max-width: 400px; margin: 4rem auto; font-family: sans-serif; padding: 0 1rem; text-align: center;">
     <h1>Register</h1>
 
     <form method="POST" use:enhance>
-        {#if form?.incorrect}
-            <p style="color: red;">Registration failed. Please check your input.</p>
+        {#if form?.error}
+            <div style="background-color: #ffe6e6; color: #d00; padding: 10px; margin-bottom: 1rem; border-radius: 4px; border: 1px solid #f99;">
+                {form.error}
+            </div>
         {/if}
 
         <div style="color: #666; margin-bottom: 2rem;">
@@ -61,15 +67,15 @@
                 
                 <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
                     <label style="cursor: pointer;">
-                    <input type="checkbox" name="accountTypes" value="buyer" checked={isChecked('buyer')} /> Buyer
+                    <input type="checkbox" name="accountTypes" value="Buyer" checked={isChecked('Buyer')} /> Buyer
                     </label>
                     
                     <label style="cursor: pointer;">
-                    <input type="checkbox" name="accountTypes" value="seller" checked={isChecked('seller')} /> Seller
+                    <input type="checkbox" name="accountTypes" value="Seller" checked={isChecked('Seller')} /> Seller
                     </label>
                     
                     <label style="cursor: pointer;">
-                    <input type="checkbox" name="accountTypes" value="admin" checked={isChecked('admin')} /> Admin
+                    <input type="checkbox" name="accountTypes" value="Admin" checked={isChecked('Admin')} /> Admin
                     </label>
                 </div>
             </fieldset>

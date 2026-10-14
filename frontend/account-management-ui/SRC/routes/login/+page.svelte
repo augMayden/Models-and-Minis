@@ -7,8 +7,10 @@
     <h1>Log In</h1>
 
     <form method="POST" use:enhance>
-        {#if form?.incorrect}
-            <p style="color: red;">Incorrect email or password.</p>
+        {#if form?.error}
+            <div style="background-color: #ffe6e6; color: #d00; padding: 10px; margin-bottom: 1rem; border-radius: 4px; border: 1px solid #f99;">
+                {form.error}
+            </div>
         {/if}
 
         <div style="color: #666; margin-bottom: 2rem;">

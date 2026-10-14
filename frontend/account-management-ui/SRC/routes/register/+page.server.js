@@ -7,18 +7,56 @@ export const actions = {
         const email = data.get('email');
         const password = data.get('password');
         const confirmPassword = data.get('confirm-password');
-        const accountTypes = data.getAll('accountType');
+        const accountTypes = data.getAll('accountTypes');
         
-        if (accountTypes.length === 0) {
-        return fail(400, { username, email, accountTypes, error: 'Please select at least one account type.' });
-        }
-
         if (!username || !email || !password || !confirmPassword) {
-            return fail(400, { username, email, incorrect: true, error: 'All fields are required.' });
+            return fail(400, { username, email, accountTypes, error: 'All fields are required.' });
         }
 
         if (password !== confirmPassword) {
-            return fail(400, {username, email, incorrect: true, error: 'Passwords do not match' });
+            return fail(400, { username, email, accountTypes, error: 'Passwords do not match.' });
+        }
+
+        if (accountTypes.length === 0) {
+            return fail(400, { username, email, accountTypes, error: 'Please select at least one account type.' });
+        }
+
+        const payload = {
+            username: username,
+            email,
+            password,
+            roles: accountTypes
+        };
+
+        console.log('Sending registration payload:', JSON.stringify(payload, null, 2));
+
+        try {
+            const response = await fetch('https://db.msuscb.duckdns.org/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            // 3. Handle backend rejections (e.g., email already taken)
+            if (!response.ok) {
+                return fail(400, { 
+                username, 
+                email, 
+                accountTypes, 
+                error: result.message || result.error || 'Registration failed.' 
+                });
+            }
+
+        } catch (err) {
+            console.error('Registration connection error:', err);
+            return fail(500, { 
+                username,
+                email, 
+                accountTypes, 
+                error: 'oopsies, something went wrong!'
+            });
         }
 
         // Perform registration logic here (e.g., save to database)
