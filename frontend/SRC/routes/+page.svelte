@@ -1,5 +1,5 @@
 <main style="max-width: 400px; margin: 4rem auto; font-family: sans-serif; padding: 0 1rem; text-align: center;">
-  <h1>Welcome to Account Management</h1>
+  <h1>Welcome to Models and Minis</h1>
   <p style="color: #666; margin-bottom: 2rem;">Please log in or register to continue.</p>
 
   <div style="display: flex; justify-content: center; gap: 1rem;">

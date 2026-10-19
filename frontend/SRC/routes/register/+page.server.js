@@ -39,7 +39,6 @@ export const actions = {
 
             const result = await response.json();
 
-            // 3. Handle backend rejections (e.g., email already taken)
             if (!response.ok) {
                 return fail(400, { 
                 username, 
