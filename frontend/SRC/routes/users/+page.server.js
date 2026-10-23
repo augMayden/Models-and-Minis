@@ -1,85 +1,45 @@
 import { redirect } from '@sveltejs/kit';
-import { onMount } from 'svelte';
 import { getAccounts } from '#lib/Admin.js';
+
+/**
+ * @typedef {Object} Account
+ * @property {string} [_id]
+ * @property {string} [id]
+ * @property {string} [username]
+ * @property {string} [name]
+ * @property {string} [email]
+ * @property {string} [role]
+ * @property {string} [accountType]
+ */
+
+/** @type {import('./$types').PageServerLoad} */
 export const load = async ({ cookies }) => {
-    const token = cookies.get('token');
-  
-    if (!token) {
+  const token = cookies.get('token');
+
+  if (!token) {
     throw redirect(303, '/login');
-    }
-    return {};
+  }
+
+  try {
+    const data = await getAccounts(token);
+
+    const accounts = Array.isArray(data) ? data : (data?.accounts ?? []);
+
+    const users = accounts.map((/** @type {Account} */ u) => ({
+      _id: String(u._id ?? u.id ?? ''),
+      username: u.username ?? u.name ?? '(no username)',
+      email: u.email ?? '',
+      role: u.role ?? 'Unknown',
+      accountType: u.accountType ?? 'Unknown'
+    }));
+
+    return { users, error: '' };
+  } catch (err) {
+    console.error('Error fetching users:', err);
+
+    return {
+      users: [],
+      error: err instanceof Error ? err.message : 'Could not load user accounts.'
     };
-
-type User = {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
+  }
 };
-
-let message = 'Welcome to the users page!';
-let users = $state<User[]>([]);
-let selectedUser = $state<User || null>(null);
-let loading = $state(true);
-let error = $state('');
-
-onMount(async () => {
-    try {
-        const token = '';
-
-        const data = await getAccounts(token);
-        console.log('Accounts returned by API:', data);
-
-        users = Array.isArray(data)
-        ? data
-        : data.accounts ?? [];
-    } catch (err) {
-        console.error('Error fetching users:', err);       
-        error = err instanceof Error ? err.message : 'Could not load user accounts.';
-    } finally {
-        loading = false;
-    }
-    });
-export const load = async ({ cookies, fetch }) => {
-
-    const token = cookies.get('token');
-
-    if (!token) {
-        return {
-            users: [],
-            error: 'Please log in before viewing user accounts.'
-        };
-    }
-
-    try {
-        const response = await fetch('https://db.msuscb.duckdns.org/api/admin/accounts',
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-
-        if (!response.ok) {
-
-            return {
-                users: [],
-                error: `Failed to load accounts: ${response.status}`
-            };
-        }
-
-        const result = await response.json();
-
-        return {
-
-            users: Array.isArray(result) ? result : result.accounts ?? [],
-            error: ''
-        };
-
-    } catch (err) {
-        return {
-            users: [],
-            error: 'Could not connect to the accounts API.'
-        };
-    }
-}
