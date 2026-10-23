@@ -1,17 +1,5 @@
 <!-- src/routes/+page.svelte -->
-<script lang="ts">
-    import { onMount } from 'svelte';
-    import { getAccounts } from '#lib/Admin.js';
-    export const load = async ({ cookies }) => {
-        const token = cookies.get('token');
-  
-        if (!token) {
-        throw redirect(303, '/login');
-        }
-
-        return {};
-        };
-
+ <script lang="ts">
     type User = {
         id: number;
         name: string;
@@ -19,31 +7,18 @@
         role: string;
     };
 
+    type PageData = {
+        users: User[];
+        error: string;
+    };
+
+    let { data }: { data: PageData } = $props();
+
     let message = 'Welcome to the users page!';
-    let users = $state<User[]>([]);
-    let selectedUser = $state<User | null>(null);
+    let users = $derived(data.users);
+    let selectedUser: User | null = $state(null);
     let loading = $state(true);
-    let error = $state('');
-
-    onMount(async () => {
-        try {
-            const token = '';
-
-            const data = await getAccounts(token);
-            console.log('Accounts returned by API:', data);
-
-            users = Array.isArray(data)
-            ? data
-            : data.accounts ?? [];
-        } catch (err) {
-            console.error('Error fetching users:', err);
-           
-            error = err instanceof Error ? err.message : 'Could not load user accounts.';
-        } finally {
-            loading = false;
-        }
-    });
-    
+    let error = $derived(data.error);
 </script>
 
 <svelte:head>
