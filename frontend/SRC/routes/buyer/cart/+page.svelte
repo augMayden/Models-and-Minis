@@ -1,8 +1,9 @@
 <script>
-  let cartItems = $state([
-    { id: 1, title: 'Handmade Ceramic Mug', price: 24.99, quantity: 2, category: 'Home' },
-    { id: 2, title: 'Vintage Leather Notebook', price: 15.50, quantity: 1, category: 'Stationery' }
-  ]);
+  import { untrack } from 'svelte';
+
+  let { data } = $props();
+
+  let cartItems = $state(untrack(() => data.cart || []));
 
   let checkoutStatus = $state('');
 

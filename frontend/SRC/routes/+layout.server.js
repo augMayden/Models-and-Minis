@@ -14,6 +14,8 @@ export const load = async ({ cookies, fetch }) => {
 
     if (response.ok) {
       const user = await response.json();
+
+      console.log('Fetched current user:', user);
       return { user };
     }
   } catch (err) {

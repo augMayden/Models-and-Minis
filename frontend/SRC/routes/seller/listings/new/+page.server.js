@@ -11,7 +11,7 @@ export const load = async ({ cookies }) => {
 export const actions = {
   default: async ({ request, cookies }) => {
     const token = cookies.get('token');
-    
+
     if (!token) {
       return fail(401, { error: 'You must be logged in to create a listing.' });
     }
@@ -34,9 +34,9 @@ export const actions = {
           'Authorization': `Bearer ${token}` // Pass the JWT cookie to authorize the seller
         },
         body: JSON.stringify({
-          title,
+          name: title,
           description,
-          price: Number(price), // Ensure price is sent as a number
+          price: Number(price),
           category
         })
       });
@@ -44,26 +44,33 @@ export const actions = {
       const result = await response.json();
 
       if (!response.ok) {
-        return fail(400, { 
-          title, 
-          description, 
-          price, 
-          category, 
-          error: result.message || result.error || 'Failed to create listing.' 
+        return fail(400, {
+          title,
+          description,
+          price,
+          category,
+          error: result.message || result.error || 'Failed to create listing.'
         });
       }
 
+      const listingID = result._id || result.id;
+
+      if(!listingID) {
+        return fail(500, {error: 'Listing created, but no ID was returned.' });
+      }
+      
     } catch (err) {
+
       console.error('Listing creation error:', err);
-      return fail(500, { 
-        title, 
-        description, 
-        price, 
-        category, 
-        error: 'Unable to connect to the server.' 
+      return fail(500, {
+        title,
+        description,
+        price,
+        category,
+        error: 'Unable to connect to the server.'
       });
     }
-    
-    throw redirect(303, '/');
+
+    throw redirect(303, `/seller/listings/${listingID}`);
   }
 };
