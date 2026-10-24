@@ -22,8 +22,6 @@ export const load = async ({ cookies }) => {
   try {
     const data = await getListings(token);
 
-    // /api/listings is paginated: { total, page, limit, items }.
-    // /api/admin/listings returns a bare array. Accept both.
     /** @type {Listing[]} */
     const items = Array.isArray(data) ? data : (data?.items ?? []);
     const total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
