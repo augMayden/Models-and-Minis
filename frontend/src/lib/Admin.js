@@ -171,3 +171,27 @@ export function getOrderById(token, id) {
 export function updateOrderFulfillment(token, id, updates) {
   return adminRequest(`/api/orders/${encodeURIComponent(id)}`, token, 'PATCH', updates);
 }
+
+/**
+ * @param {string} token
+ */
+export function getCart(token) {
+  return adminRequest('/api/cart', token);
+}
+
+/**
+ * @param {string} token
+ * @param {string} listingId
+ * @param {number} [quantity]
+ */
+export function addToCart(token, listingId, quantity = 1) {
+  return adminRequest('/api/cart/items', token, 'POST', { listingId, quantity });
+}
+
+/**
+ * @param {string} token
+ * @param {string} cartItemId
+ */
+export function removeCartItem(token, cartItemId) {
+  return adminRequest(`/api/cart/items/${encodeURIComponent(cartItemId)}`, token, 'DELETE');
+}

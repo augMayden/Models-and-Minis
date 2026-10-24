@@ -1,5 +1,11 @@
-import { redirect } from '@sveltejs/kit';
-import { getListings, getPublicListings, getAccounts } from '#lib/Admin.js';
+import { redirect, fail } from '@sveltejs/kit';
+import {
+  getListings,
+  getPublicListings,
+  getAccounts,
+  removeListing,
+  addToCart
+} from '#lib/Admin.js';
 
 /**
  * @typedef {Object} Listing
@@ -11,12 +17,6 @@ import { getListings, getPublicListings, getAccounts } from '#lib/Admin.js';
  * @property {string | { _id?: string, username?: string }} [seller]
  */
 
-/**
- * @typedef {Object} Account
- * @property {string} [_id]
- * @property {string} [username]
- */
-
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ cookies, parent }) => {
   const token = cookies.get('token');
@@ -26,7 +26,9 @@ export const load = async ({ cookies, parent }) => {
   }
 
   const { user } = await parent();
-  const isAdmin = user?.role === 'Admin';
+  const role = user?.role ?? '';
+  const isAdmin = role === 'Admin';
+  const isBuyer = role === 'Buyer';
 
   try {
     /** @type {Listing[]} */
@@ -57,7 +59,7 @@ export const load = async ({ cookies, parent }) => {
           if (a?._id) names.set(String(a._id), String(a.username ?? a._id));
         }
       } catch {
-        /* non-fatal: fall back to raw seller ids */
+        /* non-fatal */
       }
     }
 
@@ -67,10 +69,7 @@ export const load = async ({ cookies, parent }) => {
       if (typeof l.seller === 'string') {
         seller = names.get(l.seller) ?? l.seller;
       } else if (l.seller) {
-        seller =
-          l.seller.username ??
-          names.get(String(l.seller._id)) ??
-          'Unknown seller';
+        seller = l.seller.username ?? names.get(String(l.seller._id)) ?? 'Unknown seller';
       }
 
       return {
@@ -83,13 +82,57 @@ export const load = async ({ cookies, parent }) => {
       };
     });
 
-    return { listings, total, isAdmin, error: '' };
+    return { listings, total, isAdmin, isBuyer, error: '' };
   } catch (err) {
     return {
       listings: [],
       total: 0,
       isAdmin,
+      isBuyer,
       error: err instanceof Error ? err.message : 'Could not load listings.'
     };
+  }
+};
+
+export const actions = {
+  remove: async ({ request, cookies }) => {
+    const token = cookies.get('token');
+    if (!token) return fail(401, { message: 'You must be logged in.' });
+
+    const form = await request.formData();
+    const id = String(form.get('id') ?? '');
+    const name = String(form.get('name') ?? 'that listing');
+
+    if (!id) return fail(400, { message: 'Missing listing ID.' });
+
+    try {
+      const result = await removeListing(token, id);
+      if (!result) return fail(404, { message: 'No matching listing found.' });
+      return { message: `"${name}" was removed.` };
+    } catch (err) {
+      return fail(400, {
+        message: err instanceof Error ? err.message : 'Could not remove that listing.'
+      });
+    }
+  },
+
+  addToCart: async ({ request, cookies }) => {
+    const token = cookies.get('token');
+    if (!token) return fail(401, { message: 'You must be logged in.' });
+
+    const form = await request.formData();
+    const listingId = String(form.get('listingId') ?? '');
+    const name = String(form.get('name') ?? 'item');
+
+    if (!listingId) return fail(400, { message: 'Missing listing ID.' });
+
+    try {
+      await addToCart(token, listingId, 1);
+      return { message: `"${name}" added to your cart.` };
+    } catch (err) {
+      return fail(400, {
+        message: err instanceof Error ? err.message : 'Could not add that item to your cart.'
+      });
+    }
   }
 };

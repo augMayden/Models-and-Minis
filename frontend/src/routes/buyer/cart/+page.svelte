@@ -1,137 +1,112 @@
 <script>
-  import { untrack } from 'svelte';
+  /** @type {{ data: { items: Array<{ _id: string, name: string, price: number, quantity: number }>, total: number, isBuyer: boolean, error: string }, form: { message?: string } | null }} */
+  let { data, form } = $props();
 
-  /**
-   * @typedef {Object} CartItem
-   * @property {string} [_id]
-   * @property {number | string} [id]
-   * @property {number} [price]
-   * @property {number} [quantity]
-   * @property {string} [name]
-   * @property {string} [title]
-   * @property {string} [category]
-   */
-
-  /** @type {{ data: { cart?: CartItem[] } }} */
-  let { data } = $props();
-
-  /** @type {CartItem[]} */
-  let cartItems = $state(untrack(() => data.cart || []));
-
-  let checkoutStatus = $state('');
-
-  let totalPrice = $derived(
-    cartItems
-      .reduce((/** @type {number} */ sum, /** @type {CartItem} */ item) => sum + (item.price ?? 0) * (item.quantity ?? 0), 0)
-      .toFixed(2)
-  );
-
-    /**
-     * Updates the quantity of an item in the cart.
-     * @param {string | number} id 
-     * @param {number} delta 
-     */
-  function updateQuantity(id, delta) {
-    cartItems = cartItems.map((/** @type {CartItem} */ item) => {
-      if (item.id === id) {
-        const newQty = (item.quantity ?? 0) + delta;
-        return { ...item, quantity: newQty > 0 ? newQty : 1 };
-      }
-      return item;
-    });
-  }
-
-  /**
-   * Removes an item from the cart.
-   * @param {string | number} id 
-   */
-  function removeItem(id) {
-    cartItems = cartItems.filter((/** @type {CartItem} */ item) => item.id !== id);
-  }
-
-  function handleDummyCheckout() {
-    if (cartItems.length === 0) {
-      checkoutStatus = 'Your cart is empty!';
-      return;
-    }
-    checkoutStatus = 'Processing dummy checkout...';
-    
-    // Simulate network delay for checkout
-    setTimeout(() => {
-      checkoutStatus = 'Order placed successfully! 🎉 (Mock Checkout)';
-      cartItems = []; // Clear cart on success
-    }, 1200);
-  }
+  /** @param {number} n */
+  const money = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 </script>
 
-<div class="max-w-3xl mx-auto px-6 py-10">
-  <div class="flex justify-between items-center mb-8" style="text-align: center;">
-    <h1 class="text-3xl font-bold text-gray-900">Your Shopping Cart</h1>
-    <a href="/" class="text-sm text-indigo-600 hover:underline">&larr; Back to Dashboard Hub</a>
-  </div>
+<svelte:head>
+  <title>Cart</title>
+  <meta name="description" content="Your shopping cart" />
+</svelte:head>
 
-  {#if checkoutStatus}
-    <div class="mb-6 p-4 bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg text-center font-medium shadow-sm">
-      {checkoutStatus}
-    </div>
+<header>
+  <h1>Your Cart</h1>
+</header>
+
+<main>
+  {#if form?.message}
+    <p class="notice">{form.message}</p>
   {/if}
 
-  {#if cartItems.length === 0 && !checkoutStatus.includes('Success')}
-    <div class="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center" style="text-align: left;">
-      <p class="text-gray-500 text-lg mb-4">Your cart is currently empty.</p>
-      <a href="/listings" class="inline-block px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 transition">
-        Browse Marketplace
-      </a>
-    </div>
-  {:else if cartItems.length > 0}
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8" style="text-align: left;">
-      <ul class="divide-y divide-gray-200">
-        {#each cartItems as item (item.id ?? item._id)}
-          <li class="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <span class="inline-block px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600 rounded-full mb-1">{item.category}</span>
-              <h3 class="text-lg font-semibold text-gray-800">{item.title ?? item.name ?? '(untitled)'}</h3>
-              <p class="text-indigo-600 font-medium">${(item.price ?? 0).toFixed(2)} each</p>
-            </div>
+  {#if !data.isBuyer}
+    <p>Only buyer accounts have a cart. <a href="/listings">Browse listings</a></p>
+  {:else if data.error}
+    <p class="error">Error loading your cart: {data.error}</p>
+  {:else if data.items.length === 0}
+    <p>Your cart is empty. <a href="/listings">Browse listings</a></p>
+  {:else}
+    <ul>
+      {#each data.items as item (item._id)}
+        <li>
+          <span class="name">{item.name}</span>
+          <span class="qty">× {item.quantity}</span>
+          <span class="price">{money(item.price)}</span>
+          <span class="line">{money(item.price * item.quantity)}</span>
 
-            <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
-              <!-- Quantity Controls -->
-              <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                <button 
-                  onclick={() => updateQuantity(item.id ?? item._id ?? '', -1)}
-                  class="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition"
-                >-</button>
-                <span class="px-4 py-1 text-gray-800 font-medium">{item.quantity}</span>
-                <button 
-                  onclick={() => updateQuantity(item.id ?? item._id ?? '', 1)}
-                  class="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition"
-                >+</button>
-              </div>
+          <form method="POST" action="?/remove">
+            <input type="hidden" name="cartItemId" value={item._id} />
+            <button type="submit" class="danger">Remove</button>
+          </form>
+        </li>
+      {/each}
+    </ul>
 
-              <!-- Remove Button -->
-              <button 
-                onclick={() => removeItem(item.id ?? item._id ?? '')}
-                class="text-sm text-red-500 hover:text-red-700 font-medium"
-              >
-                Remove
-              </button>
-            </div>
-          </li>
-        {/each}
-      </ul>
-
-      <div class="bg-gray-50 p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4" style="text-align: right;">
-        <div class="text-lg font-bold text-gray-800">
-          Total: <span class="text-indigo-600">${totalPrice}</span>
-        </div>
-
-        <button 
-          onclick={handleDummyCheckout}
-          class="w-full sm:w-auto px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow transition"
-        >
-          Proceed to Checkout (Dummy)
-        </button>
-      </div>
-    </div>
+    <p class="total">Total: <strong>{money(data.total)}</strong></p>
   {/if}
-</div>
+</main>
+
+<style>
+  header {
+    padding: 1.5rem;
+    background: #f1f5f9;
+    border-radius: 0.5rem;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  p {
+    color: #475569;
+  }
+
+  .error {
+    color: #b91c1c;
+  }
+
+  .notice {
+    color: #166534;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .name {
+    flex: 1;
+    font-weight: 600;
+  }
+
+  .qty {
+    color: #64748b;
+  }
+
+  .line {
+    min-width: 6rem;
+    text-align: right;
+  }
+
+  li form {
+    margin: 0;
+  }
+
+  .danger {
+    color: #b91c1c;
+  }
+
+  .total {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+  }
+</style>
