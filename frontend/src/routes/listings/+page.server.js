@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { getListings, getAccounts } from '#lib/Admin.js';
+import { getListings, getPublicListings, getAccounts } from '#lib/Admin.js';
 
 /**
  * @typedef {Object} Listing
@@ -18,28 +18,47 @@ import { getListings, getAccounts } from '#lib/Admin.js';
  */
 
 /** @type {import('./$types').PageServerLoad} */
-export const load = async ({ cookies }) => {
+export const load = async ({ cookies, parent }) => {
   const token = cookies.get('token');
 
   if (!token) {
     throw redirect(303, '/login');
   }
 
+  const { user } = await parent();
+  const isAdmin = user?.role === 'Admin';
+
   try {
-    const [data, accountData] = await Promise.all([
-      getListings(token),
-      getAccounts(token)
-    ]);
-
     /** @type {Listing[]} */
-    const items = Array.isArray(data) ? data : (data?.items ?? []);
-    const total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
+    let items = [];
+    let total = 0;
 
-    const accounts = Array.isArray(accountData) ? accountData : (accountData?.accounts ?? []);
+    if (isAdmin) {
+      const data = await getListings(token);
+      items = Array.isArray(data) ? data : (data?.items ?? []);
+      total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
+    } else {
+      const data = await getPublicListings(token);
+      items = Array.isArray(data) ? data : (data?.items ?? []);
+      total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
+    }
+
     /** @type {Map<string, string>} */
     const names = new Map();
-    for (const a of accounts) {
-      if (a?._id) names.set(String(a._id), String(a.username ?? a._id));
+
+    if (isAdmin) {
+      try {
+        const accountData = await getAccounts(token);
+        const accounts = Array.isArray(accountData)
+          ? accountData
+          : (accountData?.accounts ?? []);
+
+        for (const a of accounts) {
+          if (a?._id) names.set(String(a._id), String(a.username ?? a._id));
+        }
+      } catch {
+        /* non-fatal: fall back to raw seller ids */
+      }
     }
 
     const listings = items.map((/** @type {Listing} */ l) => {
@@ -64,11 +83,12 @@ export const load = async ({ cookies }) => {
       };
     });
 
-    return { listings, total, error: '' };
+    return { listings, total, isAdmin, error: '' };
   } catch (err) {
     return {
       listings: [],
       total: 0,
+      isAdmin,
       error: err instanceof Error ? err.message : 'Could not load listings.'
     };
   }
