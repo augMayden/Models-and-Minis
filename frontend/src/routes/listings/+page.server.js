@@ -1,6 +1,4 @@
 import { redirect } from '@sveltejs/kit';
-import { onMount } from 'svelte';
-import { getAccounts } from '#lib/Admin.js';
 export async function load({ cookies, fetch }) {
     const token = cookies.get('token');
   
@@ -25,17 +23,18 @@ export async function load({ cookies, fetch }) {
             };
         }
 
+        
         const result = await response.json();
 
         return {
 
-            users: Array.isArray(result) ? result : result.accounts ?? [],
+            listings: Array.isArray(result) ? result : result.listings ?? [],
             error: ''
         };
 
     } catch {
         return {
-            users: [],
+            listings: [],
             error: 'Could not connect to the listings API.'
         };
     }

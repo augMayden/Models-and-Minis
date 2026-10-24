@@ -35,6 +35,10 @@
             {user?.username}
           </a>
 
+          <a href="/listings" class="px-3 py-1.5 text-sm font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+              Listings
+          </a>
+
 
           {#if isBuyer}
             <!-- Buyer Cart -->
@@ -52,8 +56,8 @@
 
           <!-- Admin Panel (Conditional) -->
           {#if isAdmin}
-            <a href="/admin" class="px-3 py-1.5 text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition">
-              Admin Panel
+            <a href="/users" class="px-3 py-1.5 text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white transition">
+              Users
             </a>
           {/if}
 

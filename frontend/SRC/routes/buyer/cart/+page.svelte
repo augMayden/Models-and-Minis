@@ -64,7 +64,7 @@
   {#if cartItems.length === 0 && !checkoutStatus.includes('Success')}
     <div class="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center" style="text-align: left;">
       <p class="text-gray-500 text-lg mb-4">Your cart is currently empty.</p>
-      <a href="/" class="inline-block px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 transition">
+      <a href="/listings" class="inline-block px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 transition">
         Browse Marketplace
       </a>
     </div>

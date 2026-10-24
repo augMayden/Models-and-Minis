@@ -1,5 +1,5 @@
 <script>
-  /** @type {{ data: { users: Array<{ _id: string, username: string, description: string, itemName: string, price: string }>, error: string } }} */
+  /** @type {{ data: { listings: Array<{ _id: string, username: string, description: string, itemName: string, price: string }>, error: string } }} */
   let { data } = $props();
 
   /** @type {null | { _id: string, username: string, description: string, itemName: string, price: string }} */
@@ -22,11 +22,11 @@
 
   {#if data.error}
     <p class="error">Error loading listings: {data.error}</p>
-  {:else if data.users.length === 0}
+  {:else if data.listings.length === 0}
     <p>No listings found.</p>
   {:else}
     <ul>
-      {#each data.users as listing (listing._id)}
+      {#each data.listings as listing (listing._id)}
         <li>
           <button onclick={() => (selectedListing = listing)}>
             {listing.username}
