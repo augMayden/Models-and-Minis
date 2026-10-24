@@ -26,6 +26,8 @@ export const actions = {
       return fail(400, { title, description, price, category, error: 'Title, description, and price are required.' });
     }
 
+    let listingID;
+
     try {
       const response = await fetch('https://db.msuscb.duckdns.org/api/listings', {
         method: 'POST',
@@ -41,7 +43,14 @@ export const actions = {
         })
       });
 
-      const result = await response.json();
+      const responseText = await response.text();
+      let result;
+      
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = { message: 'Invalid response from server' };
+      }
 
       if (!response.ok) {
         return fail(400, {
@@ -53,7 +62,7 @@ export const actions = {
         });
       }
 
-      const listingID = result._id || result.id;
+      listingID = result._id || result.id;
 
       if(!listingID) {
         return fail(500, {error: 'Listing created, but no ID was returned.' });
