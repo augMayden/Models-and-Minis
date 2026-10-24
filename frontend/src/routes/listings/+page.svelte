@@ -1,8 +1,8 @@
 <script>
-  /** @type {{ data: { users: Array<{ _id: string, username: string, description: string, itemName: string, price: string }>, error: string } }} */
+  /** @type {{ data: { listings: Array<{ _id: string, name: string, description: string, price: number, status: string, seller: string }>, total: number, error: string } }} */
   let { data } = $props();
 
-  /** @type {null | { _id: string, username: string, description: string, itemName: string, price: string }} */
+  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string }} */
   let selectedListing = $state(null);
 </script>
 
@@ -22,16 +22,17 @@
 
   {#if data.error}
     <p class="error">Error loading listings: {data.error}</p>
-  {:else if data.users.length === 0}
+  {:else if data.listings.length === 0}
     <p>No listings found.</p>
   {:else}
     <ul>
-      {#each data.users as listing (listing._id)}
+      {#each data.listings as listing (listing._id)}
         <li>
           <button onclick={() => (selectedListing = listing)}>
-            {listing.username}
+            {listing.name}
           </button>
-          — {listing.itemName}
+          — ${listing.price}
+          <span class="status">{listing.status}</span>
         </li>
       {/each}
     </ul>
@@ -41,11 +42,12 @@
     <section>
       <h2>Listing details</h2>
 
-      <p>Name: {selectedListing.username}</p>
+      <p>Name: {selectedListing.name}</p>
       <p>Description: {selectedListing.description}</p>
-      <p>Item Name: {selectedListing.itemName}</p>
-      <p>Price: {selectedListing.price}</p>
-      <p>Listings ID: {selectedListing._id}</p>
+      <p>Price: ${selectedListing.price}</p>
+      <p>Status: {selectedListing.status}</p>
+      <p>Seller: {selectedListing.seller}</p>
+      <p>Listing ID: {selectedListing._id}</p>
 
       <button onclick={() => (selectedListing = null)}>Close Details</button>
     </section>
@@ -69,6 +71,12 @@
 
   .error {
     color: #b91c1c;
+  }
+
+  .status {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+    color: #64748b;
   }
 
   ul {
