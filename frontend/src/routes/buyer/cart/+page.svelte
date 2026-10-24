@@ -1,24 +1,40 @@
 <script>
-  let cartItems = $state([
-    { id: 1, title: 'Handmade Ceramic Mug', price: 24.99, quantity: 2, category: 'Home' },
-    { id: 2, title: 'Vintage Leather Notebook', price: 15.50, quantity: 1, category: 'Stationery' }
-  ]);
+  import { untrack } from 'svelte';
+
+  /**
+   * @typedef {Object} CartItem
+   * @property {string} [_id]
+   * @property {number | string} [id]
+   * @property {number} [price]
+   * @property {number} [quantity]
+   * @property {string} [name]
+   * @property {string} [title]
+   * @property {string} [category]
+   */
+
+  /** @type {{ data: { cart?: CartItem[] } }} */
+  let { data } = $props();
+
+  /** @type {CartItem[]} */
+  let cartItems = $state(untrack(() => data.cart || []));
 
   let checkoutStatus = $state('');
 
   let totalPrice = $derived(
-    cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)
+    cartItems
+      .reduce((/** @type {number} */ sum, /** @type {CartItem} */ item) => sum + (item.price ?? 0) * (item.quantity ?? 0), 0)
+      .toFixed(2)
   );
 
     /**
      * Updates the quantity of an item in the cart.
-     * @param {number | string} id 
+     * @param {string | number} id 
      * @param {number} delta 
      */
   function updateQuantity(id, delta) {
-    cartItems = cartItems.map(item => {
+    cartItems = cartItems.map((/** @type {CartItem} */ item) => {
       if (item.id === id) {
-        const newQty = item.quantity + delta;
+        const newQty = (item.quantity ?? 0) + delta;
         return { ...item, quantity: newQty > 0 ? newQty : 1 };
       }
       return item;
@@ -27,10 +43,10 @@
 
   /**
    * Removes an item from the cart.
-   * @param {number | string} id 
+   * @param {string | number} id 
    */
   function removeItem(id) {
-    cartItems = cartItems.filter(item => item.id !== id);
+    cartItems = cartItems.filter((/** @type {CartItem} */ item) => item.id !== id);
   }
 
   function handleDummyCheckout() {
@@ -63,38 +79,38 @@
   {#if cartItems.length === 0 && !checkoutStatus.includes('Success')}
     <div class="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center" style="text-align: left;">
       <p class="text-gray-500 text-lg mb-4">Your cart is currently empty.</p>
-      <a href="/" class="inline-block px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 transition">
+      <a href="/listings" class="inline-block px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 transition">
         Browse Marketplace
       </a>
     </div>
   {:else if cartItems.length > 0}
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8" style="text-align: left;">
       <ul class="divide-y divide-gray-200">
-        {#each cartItems as item (item.id)}
+        {#each cartItems as item (item.id ?? item._id)}
           <li class="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <span class="inline-block px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600 rounded-full mb-1">{item.category}</span>
-              <h3 class="text-lg font-semibold text-gray-800">{item.title}</h3>
-              <p class="text-indigo-600 font-medium">${item.price.toFixed(2)} each</p>
+              <h3 class="text-lg font-semibold text-gray-800">{item.title ?? item.name ?? '(untitled)'}</h3>
+              <p class="text-indigo-600 font-medium">${(item.price ?? 0).toFixed(2)} each</p>
             </div>
 
             <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
               <!-- Quantity Controls -->
               <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                 <button 
-                  onclick={() => updateQuantity(item.id, -1)}
+                  onclick={() => updateQuantity(item.id ?? item._id ?? '', -1)}
                   class="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition"
                 >-</button>
                 <span class="px-4 py-1 text-gray-800 font-medium">{item.quantity}</span>
                 <button 
-                  onclick={() => updateQuantity(item.id, 1)}
+                  onclick={() => updateQuantity(item.id ?? item._id ?? '', 1)}
                   class="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold transition"
                 >+</button>
               </div>
 
               <!-- Remove Button -->
               <button 
-                onclick={() => removeItem(item.id)}
+                onclick={() => removeItem(item.id ?? item._id ?? '')}
                 class="text-sm text-red-500 hover:text-red-700 font-medium"
               >
                 Remove
