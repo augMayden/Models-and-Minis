@@ -17,7 +17,7 @@
       
       <!-- Logo / Home Link -->
       <a href="/" class="font-bold text-lg tracking-tight text-white hover:text-indigo-400 transition">
-        Marketplace Hub
+        Models and Minis
       </a>
 
       <!-- Navigation Actions -->

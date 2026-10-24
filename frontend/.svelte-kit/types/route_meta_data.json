@@ -15,12 +15,19 @@
 		"src/routes/login/+page.server.js",
 		"src/routes/+layout.server.js"
 	],
+	"/logout": [
+		"src/routes/logout/+server.js"
+	],
 	"/register": [
 		"src/routes/register/+page.server.js",
 		"src/routes/+layout.server.js"
 	],
 	"/seller/listings": [
 		"src/routes/seller/listings/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/seller/listings/new": [
+		"src/routes/seller/listings/new/+page.server.js",
 		"src/routes/+layout.server.js"
 	],
 	"/users": [
