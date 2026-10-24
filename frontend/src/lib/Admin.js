@@ -115,6 +115,17 @@ export async function getListings(token, status) {
 }
 
 /**
+ * Public listing feed. Returns a paginated object: { total, page, limit, items }.
+ *
+ * @param {string} token
+ * @param {string} [status]
+ */
+export async function getPublicListings(token, status) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  return adminRequest(`/api/listings${query}`, token);
+}
+
+/**
  * @param {string} token
  * @param {string} listingId
  */
