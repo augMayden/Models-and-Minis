@@ -13,7 +13,7 @@
             </div>
         {/if}
 
-        <div style="color: #666; margin-bottom: 2rem;">
+        <div style="color: #666666; margin-bottom: 2rem;">
             <label for="email">Email:</label>
             <br />
             <input
@@ -21,6 +21,7 @@
                 id="email" 
                 name="email"
                 required
+                style="background-color: #e0e0e0; color: #333; border: 1px solid #999; padding: 8px;"
             />
             <br />
             <br />
@@ -32,6 +33,7 @@
                 id="password" 
                 name="password" 
                 required
+                style="background-color: #e0e0e0; color: #333; border: 1px solid #999; padding: 8px;"
             />
         </div>
 
