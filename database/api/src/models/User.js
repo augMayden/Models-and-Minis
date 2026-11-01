@@ -202,6 +202,7 @@ buyerSchema.methods.checkout = async function (paymentId) {
   if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
 
   const items = [];
+  const earningsBySeller = new Map();
   for (const it of cart.items) {
     const listing = it.listing;
     if (!listing.isAvailable() || listing.stock < it.quantity)
@@ -214,6 +215,8 @@ buyerSchema.methods.checkout = async function (paymentId) {
     });
     listing.stock -= it.quantity;
     await listing.save();
+    const key = String(listing.seller);
+    earningsBySeller.set(key, (earningsBySeller.get(key) ?? 0) + it.unitPrice * it.quantity);
   }
 
   const order = await Order.create({
@@ -222,6 +225,11 @@ buyerSchema.methods.checkout = async function (paymentId) {
     total: cart.total,
     payment: paymentId,
   });
+
+  // Credit seller earnings at checkout (pay-at-checkout model).
+  for (const [sellerId, amount] of earningsBySeller) {
+    await Seller.findByIdAndUpdate(sellerId, { $inc: { earnings: amount } });
+  }
 
   cart.items = [];
   cart.calculateTotal();
