@@ -1,0 +1,37 @@
+{
+	"/": [
+		"src/routes/+layout.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/buyer/cart": [
+		"src/routes/buyer/cart/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/listings": [
+		"src/routes/listings/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/login": [
+		"src/routes/login/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/logout": [
+		"src/routes/logout/+server.js"
+	],
+	"/register": [
+		"src/routes/register/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/seller/listings": [
+		"src/routes/seller/listings/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/seller/listings/new": [
+		"src/routes/seller/listings/new/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/users": [
+		"src/routes/users/+page.server.js",
+		"src/routes/+layout.server.js"
+	]
+}
