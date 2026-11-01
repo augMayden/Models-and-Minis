@@ -45,6 +45,10 @@
             <a href="/buyer/cart" class="px-3 py-1.5 text-sm font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
               🛒 Cart
             </a>
+            <!-- Buyer Order History -->
+            <a href="/buyer/orders" class="px-3 py-1.5 text-sm font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+              📦 Orders
+            </a>
           {/if}
 
           <!-- Seller Panel (Conditional) -->
