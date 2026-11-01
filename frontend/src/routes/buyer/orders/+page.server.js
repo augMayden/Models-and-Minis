@@ -81,6 +81,8 @@ export const load = async ({ cookies, parent }) => {
       })
     );
 
+    orders.sort(byNewestFirst);
+
     return { orders, isBuyer: true, error: '' };
   } catch (err) {
     return {
@@ -90,3 +92,14 @@ export const load = async ({ cookies, parent }) => {
     };
   }
 };
+
+/**
+ * Sorts orders newest-first by creation date so a fresh purchase appears on top.
+ * @param {Order} a
+ * @param {Order} b
+ */
+function byNewestFirst(a, b) {
+  const ta = Date.parse(String(a.createdAt ?? '')) || 0;
+  const tb = Date.parse(String(b.createdAt ?? '')) || 0;
+  return tb - ta;
+}

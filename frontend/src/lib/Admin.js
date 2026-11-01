@@ -163,6 +163,15 @@ export function getOrders(token) {
 }
 
 /**
+ * Checks out the buyer's entire cart into a real Order via the existing
+ * POST /api/orders/checkout endpoint. Returns the created order.
+ * @param {string} token
+ */
+export function checkoutCart(token) {
+  return adminRequest('/api/orders/checkout', token, 'POST');
+}
+
+/**
  * @param {string} token
  * @param {string} id
  */

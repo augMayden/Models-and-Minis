@@ -43,7 +43,12 @@
       {/each}
     </ul>
 
-    <p class="total">Total: <strong>{money(data.total)}</strong></p>
+    <div class="checkout-row">
+      <p class="total">Total: <strong>{money(data.total)}</strong></p>
+      <form method="POST" action="?/checkout">
+        <button type="submit" class="purchase">Purchase</button>
+      </form>
+    </div>
   {/if}
 </main>
 
@@ -108,5 +113,31 @@
   .total {
     margin-top: 1rem;
     font-size: 1.1rem;
+  }
+
+  .checkout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .checkout-row .total {
+    margin-top: 0;
+  }
+
+  .purchase {
+    background: #4f46e5;
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+  }
+
+  .purchase:hover {
+    background: #4338ca;
   }
 </style>
