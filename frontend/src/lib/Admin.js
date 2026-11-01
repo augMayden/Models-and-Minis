@@ -40,6 +40,22 @@ async function adminRequest(path, token, method = 'GET', body = undefined) {
   return data;
 }
 
+/**
+ * @param {string} token
+ * @param {string} path
+ * @param {string} id
+ * @param {string} label
+ */
+async function mutateAndRequireResult(token, path, id, label) {
+  const result = await adminRequest(path, token, 'POST');
+
+  if (result === null || result === undefined) {
+    throw new Error(`No matching ${label} found for that ID.`);
+  }
+
+  return result;
+}
+
 /** @param {string} token */
 export async function getSiteOverview(token) {
   return adminRequest('/api/admin/overview', token);
@@ -55,10 +71,11 @@ export async function getAccounts(token) {
  * @param {string} accountId
  */
 export async function approveAccount(token, accountId) {
-  return adminRequest(
-    `/api/admin/accounts/${encodeURIComponent(accountId)}/approve`,
+  return mutateAndRequireResult(
     token,
-    'POST'
+    `/api/admin/accounts/${encodeURIComponent(accountId)}/approve`,
+    accountId,
+    'account'
   );
 }
 
@@ -67,10 +84,11 @@ export async function approveAccount(token, accountId) {
  * @param {string} accountId
  */
 export async function denyAccount(token, accountId) {
-  return adminRequest(
-    `/api/admin/accounts/${encodeURIComponent(accountId)}/deny`,
+  return mutateAndRequireResult(
     token,
-    'POST'
+    `/api/admin/accounts/${encodeURIComponent(accountId)}/deny`,
+    accountId,
+    'account'
   );
 }
 
@@ -79,10 +97,11 @@ export async function denyAccount(token, accountId) {
  * @param {string} accountId
  */
 export async function banAccount(token, accountId) {
-  return adminRequest(
-    `/api/admin/accounts/${encodeURIComponent(accountId)}/ban`,
+  return mutateAndRequireResult(
     token,
-    'POST'
+    `/api/admin/accounts/${encodeURIComponent(accountId)}/ban`,
+    accountId,
+    'account'
   );
 }
 
@@ -96,14 +115,26 @@ export async function getListings(token, status) {
 }
 
 /**
+ * Public listing feed. Returns a paginated object: { total, page, limit, items }.
+ *
+ * @param {string} token
+ * @param {string} [status]
+ */
+export async function getPublicListings(token, status) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  return adminRequest(`/api/listings${query}`, token);
+}
+
+/**
  * @param {string} token
  * @param {string} listingId
  */
 export async function approveListing(token, listingId) {
-  return adminRequest(
-    `/api/admin/listings/${encodeURIComponent(listingId)}/approve`,
+  return mutateAndRequireResult(
     token,
-    'POST'
+    `/api/admin/listings/${encodeURIComponent(listingId)}/approve`,
+    listingId,
+    'listing'
   );
 }
 
@@ -139,4 +170,28 @@ export function getOrderById(token, id) {
  */
 export function updateOrderFulfillment(token, id, updates) {
   return adminRequest(`/api/orders/${encodeURIComponent(id)}`, token, 'PATCH', updates);
+}
+
+/**
+ * @param {string} token
+ */
+export function getCart(token) {
+  return adminRequest('/api/cart', token);
+}
+
+/**
+ * @param {string} token
+ * @param {string} listingId
+ * @param {number} [quantity]
+ */
+export function addToCart(token, listingId, quantity = 1) {
+  return adminRequest('/api/cart/items', token, 'POST', { listingId, quantity });
+}
+
+/**
+ * @param {string} token
+ * @param {string} cartItemId
+ */
+export function removeCartItem(token, cartItemId) {
+  return adminRequest(`/api/cart/items/${encodeURIComponent(cartItemId)}`, token, 'DELETE');
 }
