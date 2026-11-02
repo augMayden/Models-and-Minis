@@ -13,7 +13,7 @@
     </div>
   {/if}
 
-  <form method="POST" class="space-y-4" use:enhance>
+  <form method="POST" enctype="multipart/form-data" class="space-y-4" use:enhance>
     <div>
       <label for="title" class="block text-sm font-medium text-gray-700">Listing Title</label>
       <input 
