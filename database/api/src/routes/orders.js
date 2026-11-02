@@ -14,6 +14,7 @@ router.post('/checkout', auth, requireRole('Buyer'), async (req, res, next) => {
     });
     res.status(201).json(order);
   } catch (e) {
+    if (/own listing/i.test(e.message)) e.status = 403;
     next(e);
   }
 });

@@ -17,7 +17,6 @@ import {
  * @property {string | { _id?: string, username?: string }} [seller]
  * @property {string} [image]
  */
-
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ cookies, parent }) => {
   const token = cookies.get('token');
@@ -70,10 +69,14 @@ export const load = async ({ cookies, parent }) => {
 
     const listings = items.map((/** @type {Listing} */ l) => {
       let seller = 'Unknown seller';
+      /** @type {string} */
+      let sellerId = '';
 
       if (typeof l.seller === 'string') {
+        sellerId = l.seller;
         seller = names.get(l.seller) ?? l.seller;
       } else if (l.seller) {
+        sellerId = String(l.seller._id ?? '');
         seller = l.seller.username ?? names.get(String(l.seller._id)) ?? 'Unknown seller';
       }
 
@@ -84,17 +87,27 @@ export const load = async ({ cookies, parent }) => {
         price: l.price ?? 0,
         status: l.status ?? 'Unknown',
         seller,
+        sellerId,
         image: l.image ?? ''
       };
     });
 
-    return { listings, total, isAdmin, isBuyer, error: '', imageWarning };
+    return {
+      listings,
+      total,
+      isAdmin,
+      isBuyer,
+      viewerId: user?._id ? String(user._id) : '',
+      error: '',
+      imageWarning
+    };
   } catch (err) {
     return {
       listings: [],
       total: 0,
       isAdmin,
       isBuyer,
+      viewerId: user?._id ? String(user._id) : '',
       error: err instanceof Error ? err.message : 'Could not load listings.',
       imageWarning
     };

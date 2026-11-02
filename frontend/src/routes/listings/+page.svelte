@@ -1,7 +1,7 @@
 <script>
   let { data, form } = $props();
 
-  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, image?: string }} */
+  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, sellerId: string, image?: string }} */
   let selectedListing = $state(null);
 
   /** @param {number} n */
@@ -78,7 +78,9 @@
       <p>Listing ID: {selectedListing._id}</p>
 
       <div class="actions">
-        {#if data.isBuyer && selectedListing.status === 'Active'}
+        {#if data.isBuyer && selectedListing.status === 'Active' && selectedListing.sellerId === data.viewerId}
+          <p class="own-note">This is your own listing — it can't be added to your cart.</p>
+        {:else if data.isBuyer && selectedListing.status === 'Active'}
           <form method="POST" action="?/addToCart">
             <input type="hidden" name="listingId" value={selectedListing._id} />
             <input type="hidden" name="name" value={selectedListing.name} />
@@ -127,6 +129,12 @@
     margin-left: 0.5rem;
     font-size: 0.85rem;
     color: #64748b;
+  }
+
+  .own-note {
+    color: #64748b;
+    font-style: italic;
+    margin: 0;
   }
 
   ul {
