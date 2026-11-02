@@ -28,6 +28,7 @@ export const actions = {
     }
 
     let listingID;
+    let imageWarning = '';
 
     try {
       const response = await fetch('https://db.msuscb.duckdns.org/api/listings', {
@@ -69,7 +70,9 @@ export const actions = {
         return fail(500, {error: 'Listing created, but no ID was returned.' });
       }
 
-      // Forward the photo (if any) to the image-upload endpoint
+      // Forward the photo (if any) to the image-upload endpoint.
+      // Non-fatal: the listing already exists, so failing hard here would make
+      // the user resubmit and create a duplicate. Report and redirect instead.
       if (image && typeof image === 'object' && image.size > 0) {
         const imgForm = new FormData();
         imgForm.append('image', image, image.name);
@@ -80,10 +83,7 @@ export const actions = {
         });
         if (!imgRes.ok) {
           const imgErr = await imgRes.json().catch(() => ({}));
-          return fail(400, {
-            title, description, price, category,
-            error: imgErr.error || 'Listing created, but the photo upload failed.'
-          });
+          imageWarning = `Listing published, but the photo upload failed${imgErr.error ? `: ${imgErr.error}` : '.'}`;
         }
       }
       
@@ -99,6 +99,7 @@ export const actions = {
       });
     }
 
+    cookies.set('listingFlash', imageWarning, { path: '/listings', maxAge: 10 });
     throw redirect(303, `/listings`);
   }
 };

@@ -26,6 +26,10 @@ export const load = async ({ cookies, parent }) => {
     throw redirect(303, '/login');
   }
 
+  // One-shot flash from the create-listing action (e.g. photo-upload warning)
+  const imageWarning = cookies.get('listingFlash') ?? '';
+  if (imageWarning) cookies.delete('listingFlash', { path: '/listings' });
+
   const { user } = await parent();
   const role = user?.role ?? '';
   const isAdmin = role === 'Admin';
@@ -84,14 +88,15 @@ export const load = async ({ cookies, parent }) => {
       };
     });
 
-    return { listings, total, isAdmin, isBuyer, error: '' };
+    return { listings, total, isAdmin, isBuyer, error: '', imageWarning };
   } catch (err) {
     return {
       listings: [],
       total: 0,
       isAdmin,
       isBuyer,
-      error: err instanceof Error ? err.message : 'Could not load listings.'
+      error: err instanceof Error ? err.message : 'Could not load listings.',
+      imageWarning
     };
   }
 };

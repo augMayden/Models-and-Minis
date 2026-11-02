@@ -1,5 +1,4 @@
 <script>
-  /** @type {{ data: { listings: Array<{ _id: string, name: string, description: string, price: number, status: string, seller: string, image?: string }>, total: number, isAdmin: boolean, isBuyer: boolean, error: string }, form: { message?: string } | null }} */
   let { data, form } = $props();
 
   /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, image?: string }} */
@@ -26,7 +25,9 @@
   {#if form?.message}
     <p class="notice">{form.message}</p>
   {/if}
-
+  {#if data.imageWarning}
+    <p class="error">{data.imageWarning}</p>
+  {/if}
   {#if data.error}
     <p class="error">Error loading listings: {data.error}</p>
   {:else if data.listings.length === 0}
