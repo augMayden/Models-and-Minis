@@ -15,6 +15,7 @@ import {
  * @property {number} [price]
  * @property {string} [status]
  * @property {string | { _id?: string, username?: string }} [seller]
+ * @property {string} [image]
  */
 
 /** @type {import('./$types').PageServerLoad} */
@@ -78,7 +79,8 @@ export const load = async ({ cookies, parent }) => {
         description: l.description ?? '',
         price: l.price ?? 0,
         status: l.status ?? 'Unknown',
-        seller
+        seller,
+        image: l.image ?? ''
       };
     });
 

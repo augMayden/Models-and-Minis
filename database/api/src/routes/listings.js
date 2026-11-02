@@ -1,6 +1,38 @@
 const router = require('express').Router();
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 const { Listing } = require('../models');
 const { auth, requireRole } = require('../middleware/auth');
+
+// ---------------- Listing images ----------------
+// Files are written to the caddy-served CDN directory and the public URL is
+// stored on the listing. Override via env for other deployments.
+const UPLOAD_DIR = process.env.LISTING_IMAGE_DIR || '/home/victor/canvas-solutions/listings';
+const PUBLIC_BASE = process.env.LISTING_IMAGE_BASE || 'https://files.msuscb.duckdns.org/listings';
+const ALLOWED_IMAGE_MIME = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const uploadImage = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = ALLOWED_IMAGE_MIME[file.mimetype] || path.extname(file.originalname).toLowerCase() || '.jpg';
+      cb(null, `${req.params.id}-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_IMAGE_MIME[file.mimetype]) return cb(null, true);
+    cb(new Error('Only JPEG, PNG, WebP, or GIF images are allowed'));
+  },
+}).single('image');
 
 // GET /api/listings?q=&theme=&status=&min=&max=&page=&limit=
 router.get('/', async (req, res, next) => {
@@ -46,6 +78,40 @@ router.post('/', auth, requireRole('Seller'), async (req, res, next) => {
   try {
     const listing = await req.user.createListing(req.body);
     res.status(201).json(listing);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/listings/:id/image  (Seller owns it, or Admin)
+// multipart/form-data with a single file field named "image"
+router.post('/:id/image', auth, requireRole('Seller', 'Admin'), (req, res, next) => {
+  uploadImage(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res, next) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+    if (req.user.role !== 'Admin' && String(listing.seller) !== String(req.user._id)) {
+      return res.status(403).json({ error: 'You can only upload images for your own listings' });
+    }
+
+    // Replace: remove the previous image file (only our own naming pattern)
+    if (listing.image) {
+      try {
+        const oldName = path.basename(listing.image);
+        const oldPath = path.join(UPLOAD_DIR, oldName);
+        if (oldName.startsWith(`${req.params.id}-`) && fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch {
+        // non-fatal: stale file left behind, listing still updated below
+      }
+    }
+
+    listing.image = `${PUBLIC_BASE}/${req.file.filename}`;
+    await listing.save();
+    res.json(listing);
   } catch (e) {
     next(e);
   }

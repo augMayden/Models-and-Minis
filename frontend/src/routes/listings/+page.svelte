@@ -1,8 +1,8 @@
 <script>
-  /** @type {{ data: { listings: Array<{ _id: string, name: string, description: string, price: number, status: string, seller: string }>, total: number, isAdmin: boolean, isBuyer: boolean, error: string }, form: { message?: string } | null }} */
+  /** @type {{ data: { listings: Array<{ _id: string, name: string, description: string, price: number, status: string, seller: string, image?: string }>, total: number, isAdmin: boolean, isBuyer: boolean, error: string }, form: { message?: string } | null }} */
   let { data, form } = $props();
 
-  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string }} */
+  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, image?: string }} */
   let selectedListing = $state(null);
 
   /** @param {number} n */
@@ -35,6 +35,15 @@
     <ul>
       {#each data.listings as listing (listing._id)}
         <li>
+          {#if listing.image}
+            <img
+              src={listing.image}
+              alt={listing.name}
+              width="44"
+              height="44"
+              style="vertical-align: middle; border-radius: 4px; object-fit: cover; margin-right: 0.5rem;"
+            />
+          {/if}
           <button onclick={() => (selectedListing = listing)}>
             {listing.name}
           </button>
@@ -52,6 +61,13 @@
       <h2>Listing details</h2>
 
       <p>Name: {selectedListing.name}</p>
+      {#if selectedListing.image}
+        <img
+          src={selectedListing.image}
+          alt={selectedListing.name}
+          style="max-width: 240px; max-height: 240px; border-radius: 8px; margin: 0.5rem 0;"
+        />
+      {/if}
       <p>Description: {selectedListing.description}</p>
       <p>Price: {money(selectedListing.price)}</p>
       {#if data.isAdmin}
