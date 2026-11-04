@@ -4,6 +4,17 @@
 
   /** @type {null | { _id: string, username: string, email: string, role: string, accountType: string }} */
   let selectedUser = $state(null);
+
+  let searchQuery = $state('');
+
+  let filteredUsers = $derived(
+    data.users.filter(user =>
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.accountType.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
 </script>
 
 <svelte:head>
@@ -20,17 +31,23 @@
   <h2>All users</h2>
   <p>Select a name to view that person's account.</p>
 
+  <input 
+    type="text"
+    placeholder="Search users..."
+    bind:value={searchQuery}
+  />
+
   {#if form?.message}
     <p class="notice">{form.message}</p>
   {/if}
 
   {#if data.error}
     <p class="error">Error loading accounts: {data.error}</p>
-  {:else if data.users.length === 0}
-    <p>No user accounts found.</p>
+  {:else if filteredUsers.length === 0}
+    <p>No matching user accounts found.</p>
   {:else}
     <ul>
-      {#each data.users as user (user._id)}
+      {#each filteredUsers as user (user._id)}
         <li>
           <button onclick={() => (selectedUser = user)}>
             {user.username}
@@ -139,5 +156,16 @@
 
   .danger {
     color: #b91c1c;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.5rem;
+    margin: 0.75rem 0 1rem;
+    border: 1px solid #415a7f;
+    border-radius: 0.375rem;
+    background: #f1f5f9;
+    color: #475569;
   }
 </style>
