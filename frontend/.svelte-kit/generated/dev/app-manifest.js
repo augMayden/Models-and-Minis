@@ -13,7 +13,6 @@ export const routes = [
 	{"id":"/login","page":true,"endpoint":false},
 	{"id":"/logout","page":false,"endpoint":true},
 	{"id":"/register","page":true,"endpoint":false},
-	{"id":"/seller/listings","page":true,"endpoint":false},
 	{"id":"/seller/listings/new","page":true,"endpoint":false},
 	{"id":"/users","page":true,"endpoint":false}
 ];

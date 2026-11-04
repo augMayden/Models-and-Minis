@@ -7,6 +7,8 @@
   let isSeller = $derived(user?.role.includes('Seller'));
   let isAdmin = $derived(user?.role.includes('Admin'));
   let isBuyer = $derived(user?.role.includes('Buyer'));
+
+  
 </script>
 
 <div class="min-h-screen bg-slate-50 text-slate-900">

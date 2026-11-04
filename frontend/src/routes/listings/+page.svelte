@@ -5,6 +5,15 @@
   /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string }} */
   let selectedListing = $state(null);
 
+  let searchQuery = $state('');
+
+  let filteredListings = $derived(
+    data.listings.filter(listing =>
+      listing.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
+
   /** @param {number} n */
   const money = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 </script>
@@ -23,6 +32,13 @@
   <h2>All listings</h2>
   <p>Select a listing to view its details.</p>
 
+  <input 
+    type="text"
+    placeholder="Search listings..."
+    bind:value={searchQuery}
+  />
+  
+
   {#if form?.message}
     <p class="notice">{form.message}</p>
   {/if}
@@ -33,7 +49,7 @@
     <p>No listings found.</p>
   {:else}
     <ul>
-      {#each data.listings as listing (listing._id)}
+      {#each filteredListings as listing (listing._id)}
         <li>
           <button onclick={() => (selectedListing = listing)}>
             {listing.name}
@@ -140,5 +156,16 @@
 
   .danger {
     color: #b91c1c;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.5rem;
+    margin: 0.75rem 0 1rem;
+    border: 1px solid #415a7f;
+    border-radius: 0.375rem;
+    background: #f1f5f9;
+    color: #475569;
   }
 </style>
