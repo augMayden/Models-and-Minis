@@ -1,5 +1,5 @@
 import { redirect, fail } from '@sveltejs/kit';
-import { getCart, addToCart, removeCartItem } from '#lib/Admin.js';
+import { getCart, addToCart, removeCartItem, checkoutCart } from '#lib/Admin.js';
 
 /**
  * @typedef {Object} CartItem
@@ -91,5 +91,20 @@ export const actions = {
         message: err instanceof Error ? err.message : 'Could not add that item.'
       });
     }
+  },
+
+  checkout: async ({ cookies }) => {
+    const token = cookies.get('token');
+    if (!token) return fail(401, { message: 'You must be logged in.' });
+
+    try {
+      await checkoutCart(token);
+    } catch (err) {
+      return fail(400, {
+        message: err instanceof Error ? err.message : 'Could not complete your purchase.'
+      });
+    }
+
+    throw redirect(303, '/buyer/orders');
   }
 };

@@ -255,7 +255,7 @@ Add a listing to the cart (increments quantity if already present).
 
 **Body:** `{ "listingId": "...", "quantity": 1 }` (quantity default 1)
 
-**201:** the updated cart. **Errors:** `400` listing unavailable · `404`
+**201:** the updated cart. **Errors:** `400` listing unavailable · `403` listing belongs to the requesting user · `404`
 
 ### `DELETE /api/cart/items/:cartItemId`
 Remove one line item by its cart-item `_id`.
@@ -272,7 +272,7 @@ Clear the cart.
 ## Orders — `/api/orders`
 
 ### `POST /api/orders/checkout` 🔒 Buyer
-Converts the current cart into an Order: validates stock, decrements `listing.stock`, snapshots prices, creates the order, and clears the cart.
+Converts the current cart into an Order: validates stock and ownership, decrements `listing.stock`, snapshots prices, creates the order, and clears the cart. All validations run **before** any stock is decremented, so a rejected line can't leave a half-processed checkout.
 
 **Body:** `{ "paymentId": "<optional>" }`
 
@@ -291,7 +291,7 @@ Converts the current cart into an Order: validates stock, decrements `listing.st
 }
 ```
 
-**Errors:** `400` empty cart or unavailable/insufficient stock · `401`/`403`
+**Errors:** `400` empty cart or unavailable/insufficient stock · `403` cart contains one of the user's own listings · `401`/`403`
 
 ### `GET /api/orders` 🔒
 - **Buyer:** their own orders.

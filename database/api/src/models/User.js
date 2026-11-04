@@ -157,6 +157,9 @@ buyerSchema.methods.addToCart = async function ({ listingId, quantity = 1 }) {
   const Cart = mongoose.model('Cart');
   const listing = await Listing.findById(listingId);
   if (!listing || !listing.isAvailable()) throw new Error('Listing unavailable');
+  if (String(listing.seller) === String(this._id))
+    throw new Error('You cannot purchase your own listing');
+
 
   let cart = await Cart.findOne({ buyer: this._id });
   if (!cart) cart = new Cart({ buyer: this._id, items: [] });
@@ -201,19 +204,30 @@ buyerSchema.methods.checkout = async function (paymentId) {
   const cart = await Cart.findOne({ buyer: this._id }).populate('items.listing');
   if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
 
+  // Validate every line BEFORE mutating anything, so a rejected item (unavailable,
+  // out of stock, or self-purchased) can't leave a half-processed checkout with
+  // stock already decremented for earlier lines.
   const items = [];
+  const earningsBySeller = new Map();
   for (const it of cart.items) {
     const listing = it.listing;
-    if (!listing.isAvailable() || listing.stock < it.quantity)
-      throw new Error(`Unavailable: ${listing.name}`);
+    if (!listing || !listing.isAvailable() || listing.stock < it.quantity)
+      throw new Error(`Unavailable: ${listing ? listing.name : 'an item in your cart'}`);
+    if (String(listing.seller) === String(this._id))
+      throw new Error(`You cannot purchase your own listing: ${listing.name}`);
     items.push({
       listing: listing._id,
       quantity: it.quantity,
       unitPrice: it.unitPrice,
       seller: listing.seller,
     });
-    listing.stock -= it.quantity;
-    await listing.save();
+    const key = String(listing.seller);
+    earningsBySeller.set(key, (earningsBySeller.get(key) ?? 0) + it.unitPrice * it.quantity);
+  }
+
+  for (const it of cart.items) {
+    it.listing.stock -= it.quantity;
+    await it.listing.save();
   }
 
   const order = await Order.create({
@@ -222,6 +236,11 @@ buyerSchema.methods.checkout = async function (paymentId) {
     total: cart.total,
     payment: paymentId,
   });
+
+  // Credit seller earnings at checkout (pay-at-checkout model).
+  for (const [sellerId, amount] of earningsBySeller) {
+    await Seller.findByIdAndUpdate(sellerId, { $inc: { earnings: amount } });
+  }
 
   cart.items = [];
   cart.calculateTotal();

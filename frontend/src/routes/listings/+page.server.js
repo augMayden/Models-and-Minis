@@ -15,8 +15,8 @@ import {
  * @property {number} [price]
  * @property {string} [status]
  * @property {string | { _id?: string, username?: string }} [seller]
+ * @property {string} [image]
  */
-
 /** @type {import('./$types').PageServerLoad} */
 export const load = async ({ cookies, parent }) => {
   const token = cookies.get('token');
@@ -24,6 +24,10 @@ export const load = async ({ cookies, parent }) => {
   if (!token) {
     throw redirect(303, '/login');
   }
+
+  // One-shot flash from the create-listing action (e.g. photo-upload warning)
+  const imageWarning = cookies.get('listingFlash') ?? '';
+  if (imageWarning) cookies.delete('listingFlash', { path: '/listings' });
 
   const { user } = await parent();
   const role = user?.role ?? '';
@@ -65,10 +69,14 @@ export const load = async ({ cookies, parent }) => {
 
     const listings = items.map((/** @type {Listing} */ l) => {
       let seller = 'Unknown seller';
+      /** @type {string} */
+      let sellerId = '';
 
       if (typeof l.seller === 'string') {
+        sellerId = l.seller;
         seller = names.get(l.seller) ?? l.seller;
       } else if (l.seller) {
+        sellerId = String(l.seller._id ?? '');
         seller = l.seller.username ?? names.get(String(l.seller._id)) ?? 'Unknown seller';
       }
 
@@ -78,18 +86,30 @@ export const load = async ({ cookies, parent }) => {
         description: l.description ?? '',
         price: l.price ?? 0,
         status: l.status ?? 'Unknown',
-        seller
+        seller,
+        sellerId,
+        image: l.image ?? ''
       };
     });
 
-    return { listings, total, isAdmin, isBuyer, error: '' };
+    return {
+      listings,
+      total,
+      isAdmin,
+      isBuyer,
+      viewerId: user?._id ? String(user._id) : '',
+      error: '',
+      imageWarning
+    };
   } catch (err) {
     return {
       listings: [],
       total: 0,
       isAdmin,
       isBuyer,
-      error: err instanceof Error ? err.message : 'Could not load listings.'
+      viewerId: user?._id ? String(user._id) : '',
+      error: err instanceof Error ? err.message : 'Could not load listings.',
+      imageWarning
     };
   }
 };

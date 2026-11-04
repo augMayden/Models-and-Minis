@@ -1,8 +1,7 @@
 <script>
-  /** @type {{ data: { listings: Array<{ _id: string, name: string, description: string, price: number, status: string, seller: string }>, total: number, isAdmin: boolean, isBuyer: boolean, error: string }, form: { message?: string } | null }} */
   let { data, form } = $props();
 
-  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string }} */
+  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, sellerId: string, image?: string }} */
   let selectedListing = $state(null);
 
   let searchQuery = $state('');
@@ -42,7 +41,9 @@
   {#if form?.message}
     <p class="notice">{form.message}</p>
   {/if}
-
+  {#if data.imageWarning}
+    <p class="error">{data.imageWarning}</p>
+  {/if}
   {#if data.error}
     <p class="error">Error loading listings: {data.error}</p>
   {:else if data.listings.length === 0}
@@ -51,6 +52,15 @@
     <ul>
       {#each filteredListings as listing (listing._id)}
         <li>
+          {#if listing.image}
+            <img
+              src={listing.image}
+              alt={listing.name}
+              width="44"
+              height="44"
+              style="vertical-align: middle; border-radius: 4px; object-fit: cover; margin-right: 0.5rem;"
+            />
+          {/if}
           <button onclick={() => (selectedListing = listing)}>
             {listing.name}
           </button>
@@ -68,6 +78,13 @@
       <h2>Listing details</h2>
 
       <p>Name: {selectedListing.name}</p>
+      {#if selectedListing.image}
+        <img
+          src={selectedListing.image}
+          alt={selectedListing.name}
+          style="max-width: 240px; max-height: 240px; border-radius: 8px; margin: 0.5rem 0;"
+        />
+      {/if}
       <p>Description: {selectedListing.description}</p>
       <p>Price: {money(selectedListing.price)}</p>
       {#if data.isAdmin}
@@ -77,7 +94,9 @@
       <p>Listing ID: {selectedListing._id}</p>
 
       <div class="actions">
-        {#if data.isBuyer && selectedListing.status === 'Active'}
+        {#if data.isBuyer && selectedListing.status === 'Active' && selectedListing.sellerId === data.viewerId}
+          <p class="own-note">This is your own listing — it can't be added to your cart.</p>
+        {:else if data.isBuyer && selectedListing.status === 'Active'}
           <form method="POST" action="?/addToCart">
             <input type="hidden" name="listingId" value={selectedListing._id} />
             <input type="hidden" name="name" value={selectedListing.name} />
@@ -126,6 +145,12 @@
     margin-left: 0.5rem;
     font-size: 0.85rem;
     color: #64748b;
+  }
+
+  .own-note {
+    color: #64748b;
+    font-style: italic;
+    margin: 0;
   }
 
   ul {

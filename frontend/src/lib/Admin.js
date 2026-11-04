@@ -157,6 +157,22 @@ export function removeListing(token, id) {
 
 /**
  * @param {string} token
+ */
+export function getOrders(token) {
+  return adminRequest('/api/orders', token);
+}
+
+/**
+ * Checks out the buyer's entire cart into a real Order via the existing
+ * POST /api/orders/checkout endpoint. Returns the created order.
+ * @param {string} token
+ */
+export function checkoutCart(token) {
+  return adminRequest('/api/orders/checkout', token, 'POST');
+}
+
+/**
+ * @param {string} token
  * @param {string} id
  */
 export function getOrderById(token, id) {
@@ -170,6 +186,14 @@ export function getOrderById(token, id) {
  */
 export function updateOrderFulfillment(token, id, updates) {
   return adminRequest(`/api/orders/${encodeURIComponent(id)}`, token, 'PATCH', updates);
+}
+
+/**
+ * @param {string} token
+ * @param {string} listingId
+ */
+export function getListingById(token, listingId) {
+  return adminRequest(`/api/listings/${encodeURIComponent(listingId)}`, token);
 }
 
 /**

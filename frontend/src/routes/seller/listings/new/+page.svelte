@@ -13,7 +13,7 @@
     </div>
   {/if}
 
-  <form method="POST" class="space-y-4" use:enhance>
+  <form method="POST" enctype="multipart/form-data" class="space-y-4" use:enhance>
     <div>
       <label for="title" class="block text-sm font-medium text-gray-700">Listing Title</label>
       <input 
@@ -60,6 +60,18 @@
         required
         class="mt-1 block w-full px-3 py-2 border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
       >{form?.description ?? ''}</textarea>
+    </div>
+
+    <div>
+      <label for="image" class="block text-sm font-medium text-gray-700">Item Photo (optional)</label>
+      <input 
+        type="file" 
+        id="image" 
+        name="image" 
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700 file:text-sm file:font-medium hover:file:bg-indigo-100"
+      />
+      <p class="mt-1 text-xs text-gray-500">JPEG, PNG, WebP, or GIF — max 5 MB.</p>
     </div>
 
     <button 
