@@ -3,9 +3,5 @@ globalThis.__sveltekit_dev = {
 	env: {
 		// empty
 	},
-<<<<<<< HEAD
-	version: "1794254381190"
-=======
-	version: "1793653544515"
->>>>>>> merge-conflicts
+	version: "1794259987428"
 };

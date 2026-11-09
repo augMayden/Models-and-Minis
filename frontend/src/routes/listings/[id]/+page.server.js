@@ -46,7 +46,7 @@ export const actions = {
     if(!token) return fail(401, {error: 'You must be logged in to add to cart'})
     
     const data = await request.formData();
-    const listingId = data.get('listingId');
+    const listingId = data.get('id');
 
     await fetch(`https://db.msuscb.duckdns.org/api/cart`, {
       method: 'POST',
@@ -61,21 +61,25 @@ export const actions = {
 
   remove: async ({ request, cookies }) => {
     const token = cookies.get('token');
-    if(!token) return fail(401, {error: 'You must be logged in to remove from cart'})
+    if(!token) return fail(401, {error: 'You must be logged in to remove listing'})
     
     const data = await request.formData();
     const listingId = data.get('listingId');
 
     try {
-      const response = await fetch(`https://db.msuscb.duckdns.org/api/cart`, {
-        method: 'DELETE',
+
+      const response = await fetch(`https://db.msuscb.duckdns.org/api/listings/${listingId}`, {
+        method: 'DELETE', 
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        // 2. Pass the soft-delete payload so the API knows to change the status
+        body: JSON.stringify({ status: 'Removed' }) 
       });
 
       if (!response.ok) {
+        // Tip: parsing response text/json here could help you see the exact database error
         return fail(400, {error: 'Failed to remove listing.'})
       }
     } catch {
