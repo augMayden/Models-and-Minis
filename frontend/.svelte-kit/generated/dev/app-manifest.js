@@ -11,9 +11,11 @@ export const routes = [
 	{"id":"/buyer/cart","page":true,"endpoint":false},
 	{"id":"/buyer/orders","page":true,"endpoint":false},
 	{"id":"/listings","page":true,"endpoint":false},
+	{"id":"/listings/[id]","page":true,"endpoint":false},
 	{"id":"/login","page":true,"endpoint":false},
 	{"id":"/logout","page":false,"endpoint":true},
 	{"id":"/register","page":true,"endpoint":false},
 	{"id":"/seller/listings/new","page":true,"endpoint":false},
-	{"id":"/users","page":true,"endpoint":false}
+	{"id":"/users","page":true,"endpoint":false},
+	{"id":"/users/[id]","page":true,"endpoint":false}
 ];

@@ -100,6 +100,6 @@ export const actions = {
     }
 
     cookies.set('listingFlash', imageWarning, { path: '/listings', maxAge: 10 });
-    throw redirect(303, `/listings`);
+    throw redirect(303, `/listings/${listingID}`);
   }
 };
