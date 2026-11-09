@@ -1,7 +1,6 @@
 <script>
   let { data, form } = $props();
 
-<<<<<<< HEAD
   /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, sellerId: string, image?: string }} */
   let selectedListing = $state(null);
 
@@ -14,8 +13,6 @@
     )
   );
 
-=======
->>>>>>> merge-conflicts
   /** @param {number} n */
   const money = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 </script>
@@ -52,15 +49,9 @@
   {:else if data.listings.length === 0}
     <p>No listings found.</p>
   {:else}
-<<<<<<< HEAD
-    <ul>
-      {#each filteredListings as listing (listing._id)}
-        <li>
-=======
     <div class="listings-grid">
       {#each data.listings as listing (listing._id)}
         <a href={`/listings/${listing._id}`} class="listing-card">
->>>>>>> merge-conflicts
           {#if listing.image}
             <div class="image-container">
               <img
@@ -90,55 +81,7 @@
           </div>
         </a>
       {/each}
-<<<<<<< HEAD
-    </ul>
-  {/if}
-
-  {#if selectedListing}
-    <section>
-      <h2>Listing details</h2>
-
-      <p>Name: {selectedListing.name}</p>
-      {#if selectedListing.image}
-        <img
-          src={selectedListing.image}
-          alt={selectedListing.name}
-          style="max-width: 240px; max-height: 240px; border-radius: 8px; margin: 0.5rem 0;"
-        />
-      {/if}
-      <p>Description: {selectedListing.description}</p>
-      <p>Price: {money(selectedListing.price)}</p>
-      {#if data.isAdmin}
-        <p>Status: {selectedListing.status}</p>
-      {/if}
-      <p>Seller: {selectedListing.seller}</p>
-      <p>Listing ID: {selectedListing._id}</p>
-
-      <div class="actions">
-        {#if data.isBuyer && selectedListing.status === 'Active' && selectedListing.sellerId === data.viewerId}
-          <p class="own-note">This is your own listing — it can't be added to your cart.</p>
-        {:else if data.isBuyer && selectedListing.status === 'Active'}
-          <form method="POST" action="?/addToCart">
-            <input type="hidden" name="listingId" value={selectedListing._id} />
-            <input type="hidden" name="name" value={selectedListing.name} />
-            <button type="submit">Add to Cart</button>
-          </form>
-        {/if}
-
-        {#if data.isAdmin && selectedListing.status !== 'Removed'}
-          <form method="POST" action="?/remove">
-            <input type="hidden" name="id" value={selectedListing._id} />
-            <input type="hidden" name="name" value={selectedListing.name} />
-            <button type="submit" class="danger">Remove Listing</button>
-          </form>
-        {/if}
-      </div>
-
-      <button onclick={() => (selectedListing = null)}>Close Details</button>
-    </section>
-=======
     </div>
->>>>>>> merge-conflicts
   {/if}
 </main>
 
@@ -234,17 +177,6 @@
     color: #64748b;
   }
 
-<<<<<<< HEAD
-  .own-note {
-    color: #64748b;
-    font-style: italic;
-    margin: 0;
-  }
-
-  ul {
-    list-style: none;
-    padding: 0;
-=======
   .status {
     display: inline-block;
     padding: 0.15rem 0.5rem;
@@ -253,7 +185,6 @@
     color: #475569;
     border-radius: 4px;
     margin-bottom: 0.5rem;
->>>>>>> merge-conflicts
   }
 
   .listing-price {
@@ -262,40 +193,4 @@
     color: #16a34a;
     margin-top: auto; /* Pushes the price to the bottom of the card */
   }
-<<<<<<< HEAD
-
-  section {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-  }
-
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-  }
-
-  .actions form {
-    margin: 0;
-  }
-
-  .danger {
-    color: #b91c1c;
-  }
-
-  input[type="text"] {
-    width: 100%;
-    max-width: 400px;
-    padding: 0.5rem;
-    margin: 0.75rem 0 1rem;
-    border: 1px solid #415a7f;
-    border-radius: 0.375rem;
-    background: #f1f5f9;
-    color: #475569;
-  }
 </style>
-=======
-</style>
->>>>>>> merge-conflicts

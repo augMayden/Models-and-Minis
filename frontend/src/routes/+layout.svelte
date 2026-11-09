@@ -55,7 +55,7 @@
 
           <!-- Seller Panel (Conditional) -->
           {#if isSeller}
-            <a href="/seller/listings/new" class="px-3 py-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition">
+            <a href="/listings/new" class="px-3 py-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition">
               Seller Panel
             </a>
           {/if}

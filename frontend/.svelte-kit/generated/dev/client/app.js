@@ -22,10 +22,10 @@ export const dictionary = {
 		"/buyer/cart": [~3],
 		"/buyer/orders": [~4],
 		"/listings": [~5],
+		"/listings/new": [~7],
 		"/listings/[id]": [~6],
-		"/login": [~7],
-		"/register": [~8],
-		"/seller/listings/new": [~9],
+		"/login": [~8],
+		"/register": [~9],
 		"/users": [~10],
 		"/users/[id]": [~11]
 	};
