@@ -18,8 +18,6 @@ export const load = async ({ cookies, fetch, url }) => {
     if (response.ok) {
       const user = await response.json();
 
-      console.log('Fetched current user:', user);
-
       // Check if the user is pending approval
       const isPending = 
         user.status?.toLowerCase() === 'pending' || 
