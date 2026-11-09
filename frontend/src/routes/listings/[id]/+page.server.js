@@ -24,9 +24,7 @@ export const load = async ({ params, cookies, parent }) => {
     const isAdmin = role === 'Admin';
     const isBuyer = role === 'Buyer';
     const isSeller = role === 'Seller';
-
-    console.log(isAdmin, isBuyer, isSeller);
-
+    
     return {
       listing,
       flash,
