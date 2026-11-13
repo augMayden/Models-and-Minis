@@ -87,7 +87,7 @@ export const load = async ({ cookies, parent }) => {
   } catch (err) {
     return {
       orders: [],
-      isBuyer: true,
+      isBuyer: false,
       error: err instanceof Error ? err.message : 'Could not load your orders.'
     };
   }

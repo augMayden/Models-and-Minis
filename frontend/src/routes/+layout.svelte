@@ -56,7 +56,11 @@
           <!-- Seller Panel (Conditional) -->
           {#if isSeller}
             <a href="/listings/new" class="px-3 py-1.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition">
-              Seller Panel
+              New Listing
+            </a>
+
+            <a href="/seller/sold" class="px-3 py-1.5 text-sm font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+              Sales History
             </a>
           {/if}
 

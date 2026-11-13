@@ -3,5 +3,5 @@ globalThis.__sveltekit_dev = {
 	env: {
 		// empty
 	},
-	version: "1794535490225"
+	version: "1794598291752"
 };
