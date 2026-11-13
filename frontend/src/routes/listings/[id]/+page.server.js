@@ -46,16 +46,18 @@ export const actions = {
     if(!token) return fail(401, {error: 'You must be logged in to add to cart'})
     
     const data = await request.formData();
-    const listingId = data.get('id');
+    const listingId = data.get('listingId');
 
-    await fetch(`https://db.msuscb.duckdns.org/api/cart`, {
+    const response = await fetch(`https://db.msuscb.duckdns.org/api/cart/items`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ listingId })
+      body: JSON.stringify({ listingId: listingId, quantity: 1 })
     });
+    if (!response.ok) return fail(response.status, {error: 'Failed to add listing to cart.'});
+    
     return { message: 'Listing added to cart successfully!' };
   },
 

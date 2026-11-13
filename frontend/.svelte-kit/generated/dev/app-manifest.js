@@ -3,6 +3,9 @@ export const immutable = [];
 export const prerendered = [];
 
 export const assets = [
+	{"path":"images/ArmyPnt.jpg"},
+	{"path":"images/D&Dminis.jpg"},
+	{"path":"images/WH.jpg"},
 	{"path":"robots.txt"}
 ];
 
