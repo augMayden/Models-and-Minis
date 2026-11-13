@@ -16,6 +16,7 @@
 </header>
 
 <main>
+  
   {#if form?.message}
     <p class="notice">{form.message}</p>
   {/if}
@@ -26,6 +27,7 @@
     <p class="error">Error loading your cart: {data.error}</p>
   {:else if data.items.length === 0}
     <p>Your cart is empty. <a href="/listings">Browse listings</a></p>
+    <!-- item added to cart -->
   {:else}
     <ul>
       {#each data.items as item (item._id)}
