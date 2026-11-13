@@ -1,0 +1,111 @@
+# CI for the Models-and-Minis marketplace.
+#
+# frontend/: SvelteKit type-check + production build
+# database/api/: full integration pass — boots a real MongoDB 7 service
+#   container, seeds demo data, starts the Express API, and runs the
+#   end-to-end smoke suite (login, listings, cart, checkout, admin).
+#
+# These steps are verified green locally before this workflow was added;
+# keep them passing the same way (node scripts/seed.js + smoke.js) when
+# changing API code.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend — svelte-check & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check (svelte-check)
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+  api:
+    name: API — seed & smoke vs MongoDB 7
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: database/api
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: marketplace_dev_pw
+        options: >-
+          --health-cmd "mongosh --quiet --eval db.adminCommand('ping').ok"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 20s
+
+    env:
+      PORT: 4000
+      MONGO_URI: mongodb://admin:marketplace_dev_pw@127.0.0.1:27017/marketplace?authSource=admin
+      JWT_SECRET: ci-only-secret-never-use-in-prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: database/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed database
+        run: node scripts/seed.js
+
+      - name: Start API and wait for /health
+        run: |
+          node src/server.js &
+          node -e "
+            const deadline = Date.now() + 30000;
+            (async function poll() {
+              while (Date.now() < deadline) {
+                try {
+                  const r = await fetch('http://127.0.0.1:4000/health');
+                  if (r.ok) { console.log('API healthy'); process.exit(0); }
+                } catch {}
+                await new Promise((res) => setTimeout(res, 500));
+              }
+              console.error('API did not become healthy within 30s');
+              process.exit(1);
+            })();
+          "
+
+      - name: Run smoke suite
+        run: node scripts/smoke.js
