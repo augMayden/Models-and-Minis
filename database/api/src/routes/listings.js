@@ -8,6 +8,9 @@ const { auth, requireRole } = require('../middleware/auth');
 // ---------------- Listing images ----------------
 // Files are written to the caddy-served CDN directory and the public URL is
 // stored on the listing. Override via env for other deployments.
+// NOTE: the directory is created lazily on first upload (not at module load)
+// so the API can boot on machines where the default path doesn't exist (CI,
+// other dev environments).
 const UPLOAD_DIR = process.env.LISTING_IMAGE_DIR || '/home/victor/canvas-solutions/listings';
 const PUBLIC_BASE = process.env.LISTING_IMAGE_BASE || 'https://files.msuscb.duckdns.org/listings';
 const ALLOWED_IMAGE_MIME = {
@@ -16,8 +19,6 @@ const ALLOWED_IMAGE_MIME = {
   'image/webp': '.webp',
   'image/gif': '.gif',
 };
-
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const OBJECT_ID_RE = /^[0-9a-fA-F]{24}$/;
 
@@ -29,7 +30,14 @@ function safeUploadPath(name) {
 
 const uploadImage = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    destination: (req, file, cb) => {
+      try {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        cb(null, UPLOAD_DIR);
+      } catch (e) {
+        cb(e);
+      }
+    },
     filename: (req, file, cb) => {
       const ext = ALLOWED_IMAGE_MIME[file.mimetype] || path.extname(file.originalname).toLowerCase() || '.jpg';
       cb(null, `${req.params.id}-${Date.now()}${ext}`);
