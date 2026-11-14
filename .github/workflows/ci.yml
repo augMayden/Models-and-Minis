@@ -62,12 +62,6 @@ jobs:
         env:
           MONGO_INITDB_ROOT_USERNAME: admin
           MONGO_INITDB_ROOT_PASSWORD: marketplace_dev_pw
-        options: >-
-          --health-cmd "mongosh --quiet --eval db.adminCommand('ping').ok"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 20s
 
     env:
       PORT: 4000
@@ -85,6 +79,25 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Wait for MongoDB to accept connections
+        run: |
+          node -e "
+            const net = require('net');
+            const deadline = Date.now() + 60000;
+            (function tryConnect() {
+              const s = net.connect(27017, '127.0.0.1');
+              s.setTimeout(2000);
+              s.on('connect', () => { s.destroy(); console.log('MongoDB is accepting connections'); process.exit(0); });
+              const retry = () => {
+                s.destroy();
+                if (Date.now() > deadline) { console.error('MongoDB not reachable within 60s'); process.exit(1); }
+                setTimeout(tryConnect, 1000);
+              };
+              s.on('error', retry);
+              s.on('timeout', retry);
+            })();
+          "
 
       - name: Seed database
         run: node scripts/seed.js
