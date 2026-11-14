@@ -59,7 +59,7 @@
               New Listing
             </a>
 
-            <a href="/seller/sold" class="px-3 py-1.5 text-sm font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+            <a href="/seller/sold" class="px-3 py-1.5 text-sm font-medium bg-blue-600 text-slate-200 hover:bg-blue-500 transition">
               Sales History
             </a>
           {/if}

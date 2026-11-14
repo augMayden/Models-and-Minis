@@ -38,12 +38,16 @@
 		"src/routes/seller/sold/+page.server.js",
 		"src/routes/+layout.server.js"
 	],
-	"/users": [
-		"src/routes/users/+page.server.js",
+	"/tempUsers": [
+		"src/routes/tempUsers/+page.server.js",
 		"src/routes/+layout.server.js"
 	],
-	"/users/[id]": [
-		"src/routes/users/[id]/+page.server.js",
+	"/tempUsers/[id]": [
+		"src/routes/tempUsers/[id]/+page.server.js",
+		"src/routes/+layout.server.js"
+	],
+	"/users": [
+		"src/routes/users/+page.server.js",
 		"src/routes/+layout.server.js"
 	]
 }
