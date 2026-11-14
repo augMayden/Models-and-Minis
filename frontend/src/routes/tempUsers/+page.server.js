@@ -19,25 +19,20 @@ export const load = async ({ cookies, parent }) => {
   }
 
   // One-shot flash from the create-listing action (e.g. photo-upload warning)
-  const imageWarning = cookies.get('listingFlash') ?? '';
-  if (imageWarning) cookies.delete('listingFlash', { path: '/listings' });
+  const imageWarning = cookies.get('userFlash') ?? '';
+  if (imageWarning) cookies.delete('userFlash', { path: '/users' });
 
   const { user } = await parent();
   const role = user?.role ?? '';
   const isAdmin = role === 'Admin';
-  const isBuyer = role === 'Buyer';
 
   try {
-    /** @type {Listing[]} */
+    /** @type {Account[]} */
     let items = [];
     let total = 0;
 
     if (isAdmin) {
-      const data = await getListings(token);
-      items = Array.isArray(data) ? data : (data?.items ?? []);
-      total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
-    } else {
-      const data = await getPublicListings(token);
+      const data = await getAccounts(token);
       items = Array.isArray(data) ? data : (data?.items ?? []);
       total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
     }
@@ -60,7 +55,7 @@ export const load = async ({ cookies, parent }) => {
       }
     }
 
-    const listings = items.map((/** @type {Listing} */ l) => {
+    const users = items.map((/** @type {Account} */ l) => {
       let seller = 'Unknown seller';
       /** @type {string} */
       let sellerId = '';
@@ -86,66 +81,44 @@ export const load = async ({ cookies, parent }) => {
     });
 
     return {
-      listings,
+      users,
       total,
       isAdmin,
-      isBuyer,
       viewerId: user?._id ? String(user._id) : '',
       error: '',
       imageWarning
     };
   } catch (err) {
     return {
-      listings: [],
+      users: [],
       total: 0,
       isAdmin,
-      isBuyer,
       viewerId: user?._id ? String(user._id) : '',
-      error: err instanceof Error ? err.message : 'Could not load listings.',
+      error: err instanceof Error ? err.message : 'Could not load users.',
       imageWarning
     };
   }
 };
 
 export const actions = {
-  remove: async ({ request, cookies }) => {
+  ban: async ({ request, cookies }) => {
     const token = cookies.get('token');
     if (!token) return fail(401, { message: 'You must be logged in.' });
 
     const form = await request.formData();
     const id = String(form.get('id') ?? '');
-    const name = String(form.get('name') ?? 'that listing');
+    const name = String(form.get('name') ?? 'that user');
 
-    if (!id) return fail(400, { message: 'Missing listing ID.' });
+    if (!id) return fail(400, { message: 'Missing user ID.' });
 
     try {
-      const result = await removeListing(token, id);
-      if (!result) return fail(404, { message: 'No matching listing found.' });
-      return { message: `"${name}" was removed.` };
+      const result = await banAccount(token, id);
+      if (!result) return fail(404, { message: 'No matching user found.' });
+      return { message: `"${name}" was banned.` };
     } catch (err) {
       return fail(400, {
-        message: err instanceof Error ? err.message : 'Could not remove that listing.'
+        message: err instanceof Error ? err.message : 'Could not ban that user.'
       });
     }
   },
-
-  addToCart: async ({ request, cookies }) => {
-    const token = cookies.get('token');
-    if (!token) return fail(401, { message: 'You must be logged in.' });
-
-    const form = await request.formData();
-    const listingId = String(form.get('listingId') ?? '');
-    const name = String(form.get('name') ?? 'item');
-
-    if (!listingId) return fail(400, { message: 'Missing listing ID.' });
-
-    try {
-      await addToCart(token, listingId, 1);
-      return { message: `"${name}" added to your cart.` };
-    } catch (err) {
-      return fail(400, {
-        message: err instanceof Error ? err.message : 'Could not add that item to your cart.'
-      });
-    }
-  }
 };

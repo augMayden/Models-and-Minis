@@ -4,6 +4,7 @@
    *   data: {
    *     orders: Array<{
    *       _id: string,
+   *       buyerName: string,
    *       items: Array<{ _id: string, listingId: string, name: string, price: number, quantity: number }>,
    *       total: number,
    *       fulfillmentState: string,
@@ -55,7 +56,7 @@
 
 <main>
   {#if !data.isSeller}
-    <p>Only seller accounts have sales history. </p>
+    <p>Only seller accounts have sales history.</p>
   {:else if data.error}
     <p class="error">Error loading your sales: {data.error}</p>
   {:else if data.orders.length === 0}
@@ -69,6 +70,7 @@
             {#if dateLabel(order.createdAt)}
               <span class="order-date"> · {dateLabel(order.createdAt)}</span>
             {/if}
+            <div class="buyer-name">Buyer: <strong>{order.buyerName}</strong></div>
           </div>
           <span class="state {stateClass(order.fulfillmentState)}">{order.fulfillmentState}</span>
         </div>
@@ -128,7 +130,7 @@
 
   .order-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
     padding-bottom: 0.5rem;
@@ -142,6 +144,12 @@
   .order-date {
     color: #64748b;
     font-size: 0.9rem;
+  }
+
+  .buyer-name {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    color: #334155;
   }
 
   .state {

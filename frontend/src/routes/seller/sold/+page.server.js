@@ -1,10 +1,17 @@
 import { redirect } from '@sveltejs/kit';
-import { getOrders, getListingById } from '#lib/Admin.js';
+import { getOrders, getListingById, getUserById } from '#lib/Admin.js';
+
+/**
+ * @typedef {Object} Buyer
+ * @property {string} [_id]
+ * @property {string} [name]
+ * @property {string} [username]
+ */
 
 /**
  * @typedef {Object} OrderItem
  * @property {string} [_id]
- * @property {{ _id?: string, name?: string, price?: number }} [listing]
+ * @property {string | { _id?: string, name?: string, price?: number }} [listing]
  * @property {number} [quantity]
  * @property {number} [unitPrice]
  */
@@ -12,6 +19,8 @@ import { getOrders, getListingById } from '#lib/Admin.js';
 /**
  * @typedef {Object} Order
  * @property {string} [_id]
+ * @property {string | Buyer} [buyer]
+ * @property {string | Buyer} [user]
  * @property {OrderItem[]} [items]
  * @property {number} [total]
  * @property {string} [fulfillmentState]
@@ -48,11 +57,31 @@ export const load = async ({ cookies, parent }) => {
 
     const orders = await Promise.all(
       /** @type {Order[]} */ (raw).filter(isObject).map(async (order) => {
+        // Resolve buyer name (supports populated object or ID string on order.buyer / order.user)
+        const rawBuyer = order.buyer ?? order.user;
+        let buyerName = 'Unknown Buyer';
+
+        if (isObject(rawBuyer)) {
+          buyerName = String(rawBuyer.name ?? rawBuyer.username ?? 'Unknown Buyer');
+        } else if (typeof rawBuyer === 'string' && rawBuyer) {
+          try {
+            const fetchedUser = await getUserById(token, rawBuyer);
+            buyerName = isObject(fetchedUser)
+              ? String(fetchedUser.name ?? fetchedUser.username ?? `User #${rawBuyer.slice(-6)}`)
+              : `User #${rawBuyer.slice(-6)}`;
+          } catch {
+            buyerName = `User #${rawBuyer.slice(-6)}`;
+          }
+        }
+
         const items = await Promise.all(
           (Array.isArray(order.items) ? order.items : []).map(async (item) => {
-            const listingId = String(item?.listing ?? '');
-            let name = '';
-            if (listingId) {
+            const listingId = isObject(item?.listing)
+              ? String(item.listing._id ?? '')
+              : String(item?.listing ?? '');
+
+            let name = isObject(item?.listing) ? String(item.listing.name ?? '') : '';
+            if (!name && listingId) {
               try {
                 const listing = await getListingById(token, listingId);
                 name = String(listing?.name ?? '');
@@ -60,11 +89,12 @@ export const load = async ({ cookies, parent }) => {
                 name = '';
               }
             }
+
             return {
               _id: String(item?._id ?? ''),
               listingId,
               name: name || '(unavailable)',
-              price: Number(item?.unitPrice ?? item?.listing?.price ?? 0),
+              price: Number(item?.unitPrice ?? (isObject(item?.listing) ? item.listing.price : 0) ?? 0),
               quantity: Number(item?.quantity ?? 1)
             };
           })
@@ -72,6 +102,7 @@ export const load = async ({ cookies, parent }) => {
 
         return {
           _id: String(order._id ?? ''),
+          buyerName,
           items,
           total: Number(order.total ?? 0),
           fulfillmentState: String(order.fulfillmentState ?? 'Open'),

@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { approveAccount, denyAccount, banAccount } from '#lib/Admin.js';
 
 export const load = async ({ params, cookies, parent }) => {
   const { id } = params;

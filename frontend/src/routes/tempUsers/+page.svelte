@@ -1,15 +1,15 @@
 <script>
   let { data, form } = $props();
 
-  /** @type {null | { _id: string, name: string, description: string, price: number, status: string, seller: string, sellerId: string, image?: string }} */
-  let selectedListing = $state(null);
+  /** @type {null | { _id: string, name: string, email: string, status: string}} */
+  let selecteduser = $state(null);
 
   let searchQuery = $state('');
 
-  let filteredListings = $derived(
-    data.listings.filter(listing =>
-      listing.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.description.toLowerCase().includes(searchQuery.toLowerCase())
+  let filteredUsers = $derived(
+    data.users.filter(user =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
 
@@ -18,22 +18,22 @@
 </script>
 
 <svelte:head>
-  <title>Listings</title>
-  <meta name="description" content="Browse listings" />
+  <title>Users</title>
+  <meta name="description" content="Browse Users" />
 </svelte:head>
 
 <header>
-  <h1>Listings</h1>
-  <p>Welcome to the listings page!</p>
+  <h1>Users</h1>
+  <p>Welcome to the users page!</p>
 </header>
 
 <main>
-  <h2>All listings</h2>
-  <p>Select a listing to view its details.</p>
+  <h2>All Users</h2>
+  <p>Select a user to view their details.</p>
 
   <input 
     type="text"
-    placeholder="Search listings..."
+    placeholder="Search users..."
     bind:value={searchQuery}
   />
   
@@ -45,19 +45,19 @@
     <p class="error">{data.imageWarning}</p>
   {/if}
   {#if data.error}
-    <p class="error">Error loading listings: {data.error}</p>
-  {:else if data.listings.length === 0}
-    <p>No listings found.</p>
+    <p class="error">Error loading accounts: {data.error}</p>
+  {:else if data.users.length === 0}
+    <p>No users found.</p>
   {:else}
-    <div class="listings-grid">
-      {#each data.listings as listing (listing._id)}
-        <a href={`/listings/${listing._id}`} class="listing-card">
-          {#if listing.image}
+    <div class="users-grid">
+      {#each data.users as user (user._id)}
+        <a href={`/users/${user._id}`} class="users-card">
+          {#if user.image}
             <div class="image-container">
               <img
-                src={listing.image}
-                alt={listing.name}
-                class="listing-image"
+                src={user.image}
+                alt={user.name}
+                class="users-image"
               />
             </div>
           {:else}
@@ -68,16 +68,13 @@
 
           <div class="card-content">
             <div>
-              <h3 class="listing-name">{listing.name}</h3>
-              <p class="listing-seller">Seller: {listing.seller || 'Unknown'}</p>
-              {#if data.isAdmin && listing.status}
-                <span class="status">{listing.status}</span>
+              <h3 class="users-name">{user.name}</h3>
+              <p class="users-seller">Email: {user.email || 'Unknown'}</p>
+              {#if data.isAdmin && user.status}
+                <span class="status">{user.status}</span>
               {/if}
             </div>
-            
-            <div class="listing-price">
-              {money(listing.price)}
-            </div>
+
           </div>
         </a>
       {/each}
@@ -110,7 +107,7 @@
   }
 
   /* Grid Layout for Boxes */
-  .listings-grid {
+  .users-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.5rem;
@@ -118,7 +115,7 @@
   }
 
   /* Individual Card Styling */
-  .listing-card {
+  .users-card {
     display: flex;
     flex-direction: column;
     background: #ffffff;
@@ -130,7 +127,7 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .listing-card:hover {
+  .users-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
@@ -150,7 +147,7 @@
     font-size: 0.875rem;
   }
 
-  .listing-image {
+  .users-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -164,17 +161,11 @@
     flex-grow: 1;
   }
 
-  .listing-name {
+  .users-name {
     margin: 0 0 0.25rem 0;
     font-size: 1.1rem;
     font-weight: 600;
     color: #0f172a;
-  }
-
-  .listing-seller {
-    margin: 0 0 0.75rem 0;
-    font-size: 0.85rem;
-    color: #64748b;
   }
 
   .status {
@@ -187,10 +178,4 @@
     margin-bottom: 0.5rem;
   }
 
-  .listing-price {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #16a34a;
-    margin-top: auto; /* Pushes the price to the bottom of the card */
-  }
 </style>
