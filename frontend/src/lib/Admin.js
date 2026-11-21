@@ -68,6 +68,14 @@ export async function getAccounts(token) {
 
 /**
  * @param {string} token
+ * @param {string} userId
+ */
+export function getUserById(token, userId) {
+  return adminRequest(`/api/users/${encodeURIComponent(userId)}`, token);
+}
+
+/**
+ * @param {string} token
  * @param {string} accountId
  */
 export async function approveAccount(token, accountId) {

@@ -35,7 +35,7 @@ export const load = async ({ params, cookies, parent }) => {
       token
     };
 
-  } catch (err) {
+  } catch (/** @type {any} */ err) {
     if (err.status) throw err;
     throw error(500, 'Failed to load user details.');
   }

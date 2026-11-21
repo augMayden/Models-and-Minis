@@ -8,6 +8,7 @@ import { getAccounts, approveAccount, denyAccount, banAccount } from '#lib/Admin
  * @property {string} [email]
  * @property {string} [role]
  * @property {string} [accountType]
+ * @property {string} [status]
  */
 
 /** @type {import('./$types').PageServerLoad} */
@@ -37,48 +38,16 @@ export const load = async ({ cookies, parent }) => {
       total = Array.isArray(data) ? items.length : (data?.total ?? items.length);
     }
 
-    /** @type {Map<string, string>} */
-    const names = new Map();
-
-    if (isAdmin) {
-      try {
-        const accountData = await getAccounts(token);
-        const accounts = Array.isArray(accountData)
-          ? accountData
-          : (accountData?.accounts ?? []);
-
-        for (const a of accounts) {
-          if (a?._id) names.set(String(a._id), String(a.username ?? a._id));
-        }
-      } catch {
-        /* non-fatal */
-      }
-    }
-
-    const users = items.map((/** @type {Account} */ l) => {
-      let seller = 'Unknown seller';
-      /** @type {string} */
-      let sellerId = '';
-
-      if (typeof l.seller === 'string') {
-        sellerId = l.seller;
-        seller = names.get(l.seller) ?? l.seller;
-      } else if (l.seller) {
-        sellerId = String(l.seller._id ?? '');
-        seller = l.seller.username ?? names.get(String(l.seller._id)) ?? 'Unknown seller';
-      }
-
-      return {
-        _id: String(l._id ?? ''),
-        name: l.name ?? '(untitled)',
-        description: l.description ?? '',
-        price: l.price ?? 0,
-        status: l.status ?? 'Unknown',
-        seller,
-        sellerId,
-        image: l.image ?? ''
-      };
-    });
+    // Accounts are user records (username/email/status), not listings — map
+    // them to the card shape the page renders. `image` is kept as '' because
+    // the card markup expects the field; accounts have no photos.
+    const users = items.map((/** @type {Account} */ a) => ({
+      _id: String(a._id ?? ''),
+      name: a.username ?? '(no username)',
+      email: a.email ?? '',
+      status: a.status ?? 'Unknown',
+      image: ''
+    }));
 
     return {
       users,
