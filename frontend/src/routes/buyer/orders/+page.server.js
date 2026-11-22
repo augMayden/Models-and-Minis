@@ -22,7 +22,6 @@ const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
  * @property {string} [shippingInfo]
  * @property {string} [createdAt]
  * @property {boolean} [returnable]
- * @property {boolean} [cancelled]
  */
 
 /**
@@ -86,8 +85,7 @@ export const load = async ({ cookies, parent }) => {
           returnable:
             !Number.isNaN(Date.parse(String(order.createdAt ?? ''))) &&
             Date.now() - Date.parse(String(order.createdAt)) <= RETURN_WINDOW_MS &&
-            String(order.fulfillmentState ?? '') !== 'Cancelled',
-          cancelled: String(order.fulfillmentState ?? '') === 'Cancelled'
+            String(order.fulfillmentState ?? '') !== 'Cancelled'
         };
       })
     );

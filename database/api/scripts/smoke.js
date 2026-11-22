@@ -62,8 +62,9 @@ const log = (label, ok, extra = '') =>
   const approved = await call('POST', `/api/admin/listings/${created.data._id}/approve`, { token: adminTok });
   check('admin approve listing', approved.status === 200 && approved.data.status === 'Active');
 
-  // buyer adds to cart
-  const added = await call('POST', '/api/cart/items', { token: buyerTok, body: { listingId: firstListing._id, quantity: 2 } });
+  // buyer adds to cart — use the listing this run created, so the later
+  // return checks are deterministic about which seller owns the item.
+  const added = await call('POST', '/api/cart/items', { token: buyerTok, body: { listingId: created.data._id, quantity: 2 } });
   check('add to cart', added.status === 201 && added.data.items.length >= 1, `total=${added.data.total}`);
 
   // buyer cannot access admin
@@ -115,7 +116,10 @@ const log = (label, ok, extra = '') =>
     check('buyer lists own returns', myReturns.status === 200 && myReturns.data.some((r) => String(r._id) === String(returned.data._id)));
 
     const sellerReturns = await call('GET', '/api/orders/returns', { token: sellerTok });
-    check('seller can list returns', sellerReturns.status === 200 && Array.isArray(sellerReturns.data));
+    check(
+      'seller sees returns for their items',
+      sellerReturns.status === 200 && sellerReturns.data.some((r) => String(r._id) === String(returned.data._id))
+    );
   } else {
     check('return flow (no orders to exercise)', false, 'no order with items found');
   }

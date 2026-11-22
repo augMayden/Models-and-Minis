@@ -11,8 +11,7 @@
    *       fulfillmentState: string,
    *       shippingInfo: string,
    *       createdAt: string,
-   *       returnable: boolean,
-   *       cancelled: boolean
+   *       returnable: boolean
    *     }>,
    *     isBuyer: boolean,
    *     error: string
@@ -21,6 +20,14 @@
    * }}
    */
   let { data, form } = $props();
+
+  // Item ids this session has already submitted a return for, so the button
+  // flips to a confirmation instead of letting the buyer trigger a 409.
+  /** @type {Record<string, boolean>} */
+  let returnRequested = $state({});
+
+  /** @param {string} itemId */
+  const isRequested = (itemId) => !!returnRequested[itemId];
 
   /** @param {number} n */
   const money = (n) => `$${Number(n ?? 0).toFixed(2)}`;
@@ -91,18 +98,31 @@
               <span class="line">{money(item.price * item.quantity)}</span>
               {#if order.returnable}
                 <details class="return-box">
-                  <summary>Return to seller</summary>
-                  <form method="POST" action="?/return" use:enhance>
-                    <input type="hidden" name="orderId" value={order._id} />
-                    <input type="hidden" name="itemId" value={item._id} />
-                    <input
-                      type="text"
-                      name="reason"
-                      placeholder="Reason (optional)"
-                      maxlength="300"
-                    />
-                    <button type="submit">Request return</button>
-                  </form>
+                  <summary>
+                    {isRequested(item._id) ? 'Return requested ✓' : 'Return to seller'}
+                  </summary>
+                  {#if !isRequested(item._id)}
+                    <form
+                      method="POST"
+                      action="?/return"
+                      use:enhance={() => {
+                        return async ({ result, update }) => {
+                          if (result.type === 'success') returnRequested[item._id] = true;
+                          await update();
+                        };
+                      }}
+                    >
+                      <input type="hidden" name="orderId" value={order._id} />
+                      <input type="hidden" name="itemId" value={item._id} />
+                      <input
+                        type="text"
+                        name="reason"
+                        placeholder="Reason (optional)"
+                        maxlength="300"
+                      />
+                      <button type="submit">Request return</button>
+                    </form>
+                  {/if}
                 </details>
               {/if}
             </li>

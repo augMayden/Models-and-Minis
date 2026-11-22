@@ -31,6 +31,7 @@ router.get('/', auth, async (req, res, next) => {
 });
 
 // POST /api/orders/:id/items/:itemId/return  { reason? }  (Buyer, own order, within 7 days)
+// The buyer notification is created inside Buyer.requestReturn().
 router.post('/:id/items/:itemId/return', auth, requireRole('Buyer'), async (req, res, next) => {
   try {
     const refund = await req.user.requestReturn(
@@ -38,29 +39,22 @@ router.post('/:id/items/:itemId/return', auth, requireRole('Buyer'), async (req,
       req.params.itemId,
       typeof req.body?.reason === 'string' ? req.body.reason : ''
     );
-    await Notification.create({
-      recipient: req.user._id,
-      recipientModel: 'Buyer',
-      type: 'return',
-      message: `Return request received (request ${refund._id}). The seller will review it.`,
-    });
     res.status(201).json(refund);
   } catch (e) {
     next(e);
   }
 });
 
-// GET /api/returns  — refund requests for the caller (Buyer: own; Seller/Admin: their orders')
+// GET /api/orders/returns — refund requests for the caller
+// (Buyer: own; Seller: for orders containing their items; Admin: all)
 router.get('/returns', auth, async (req, res, next) => {
   try {
     const { RefundRequest } = require('../models');
     if (req.user.role === 'Buyer') {
-      const refunds = await RefundRequest.find({}).populate({
-        path: 'order',
-        match: { buyer: req.user._id },
-        select: 'buyer',
-      });
-      return res.json(refunds.filter((r) => r.order));
+      const ownOrders = await Order.find({ buyer: req.user._id }).select('_id');
+      return res.json(
+        await RefundRequest.find({ order: { $in: ownOrders.map((o) => o._id) } })
+      );
     }
     if (req.user.role === 'Seller') {
       const orders = await Order.find({ 'items.seller': req.user._id }).select('_id');
