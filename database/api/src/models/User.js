@@ -195,6 +195,70 @@ buyerSchema.methods.compareListings = async function (listingIds = []) {
   return mongoose.model('Listing').find({ _id: { $in: listingIds } }).lean();
 };
 
+// How long after purchase an item may be returned to the seller.
+const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+// requestReturn(orderId, orderItemId, reason) : RefundRequest
+// Buyer asks to return one item from their own order to the seller.
+// Rules: order must belong to this buyer, the item must be in it, the
+// purchase must be within the 7-day return window, and each item can only
+// have one open return. Creates a Pending RefundRequest for the seller to
+// decide and notifies the buyer.
+buyerSchema.methods.requestReturn = async function (orderId, orderItemId, reason = '') {
+  const Order = mongoose.model('Order');
+  const RefundRequest = mongoose.model('RefundRequest');
+
+  const order = await Order.findOne({ _id: orderId, buyer: this._id });
+  if (!order) {
+    const exists = await Order.findById(orderId).select('_id');
+    throw Object.assign(new Error(exists ? 'Forbidden' : 'Order not found'), {
+      status: exists ? 403 : 404,
+    });
+  }
+
+  const item = order.items.id(orderItemId);
+  if (!item) throw Object.assign(new Error('Item not found in this order'), { status: 404 });
+
+  const purchasedAt = order.createdAt || order._id.getTimestamp();
+  if (Date.now() - purchasedAt.getTime() > RETURN_WINDOW_MS) {
+    throw Object.assign(new Error('The 7-day return window for this order has passed'), {
+      status: 409,
+    });
+  }
+
+  const dup = await RefundRequest.findOne({ order: order._id, orderItem: item._id });
+  if (dup) {
+    throw Object.assign(new Error('A return has already been requested for this item'), {
+      status: 409,
+      returnRequestId: dup._id,
+      returnStatus: dup.status,
+    });
+  }
+
+  const refund = await RefundRequest.create({
+    order: order._id,
+    orderItem: item._id,
+    reason: String(reason || 'No reason provided'),
+  });
+
+  let itemName = 'an item';
+  try {
+    await item.populate('listing', 'name');
+    if (item.listing?.name) itemName = item.listing.name;
+  } catch {
+    /* notification only — fall back to generic label */
+  }
+
+  await mongoose.model('Notification').create({
+    recipient: this._id,
+    recipientModel: 'Buyer',
+    type: 'return',
+    message: `Return requested for "${itemName}" in order ${order._id}. Status: ${refund.status}.`,
+  });
+
+  return refund;
+};
+
 // checkout(paymentId) — minimal end-to-end cart -> order. Extend as needed.
 buyerSchema.methods.checkout = async function (paymentId) {
   const Cart = mongoose.model('Cart');

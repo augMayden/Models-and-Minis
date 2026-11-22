@@ -1,4 +1,6 @@
 <script>
+  import { enhance } from '$app/forms';
+
   /**
    * @type {{
    *   data: {
@@ -8,14 +10,17 @@
    *       total: number,
    *       fulfillmentState: string,
    *       shippingInfo: string,
-   *       createdAt: string
+   *       createdAt: string,
+   *       returnable: boolean,
+   *       cancelled: boolean
    *     }>,
    *     isBuyer: boolean,
    *     error: string
-   *   }
+   *   },
+   *   form: null | { message: string }
    * }}
    */
-  let { data } = $props();
+  let { data, form } = $props();
 
   /** @param {number} n */
   const money = (n) => `$${Number(n ?? 0).toFixed(2)}`;
@@ -61,7 +66,11 @@
   {:else if data.orders.length === 0}
     <p>You haven't placed any orders yet. <a href="/listings">Browse listings</a> to get started.</p>
   {:else}
-    {#each data.orders as order (order._id)}
+    {#if form?.message}
+    <p class="notice" role="status">{form.message}</p>
+  {/if}
+
+  {#each data.orders as order (order._id)}
       <section class="order">
         <div class="order-head">
           <div>
@@ -80,6 +89,22 @@
               <span class="qty">× {item.quantity}</span>
               <span class="price">{money(item.price)}</span>
               <span class="line">{money(item.price * item.quantity)}</span>
+              {#if order.returnable}
+                <details class="return-box">
+                  <summary>Return to seller</summary>
+                  <form method="POST" action="?/return" use:enhance>
+                    <input type="hidden" name="orderId" value={order._id} />
+                    <input type="hidden" name="itemId" value={item._id} />
+                    <input
+                      type="text"
+                      name="reason"
+                      placeholder="Reason (optional)"
+                      maxlength="300"
+                    />
+                    <button type="submit">Request return</button>
+                  </form>
+                </details>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -228,5 +253,57 @@
   .total {
     margin: 0;
     font-size: 1.1rem;
+  }
+
+  .notice {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .return-box {
+    flex: 1;
+    min-width: 12rem;
+    text-align: right;
+  }
+
+  .return-box summary {
+    display: inline-block;
+    cursor: pointer;
+    color: #1d4ed8;
+    font-size: 0.9rem;
+    user-select: none;
+  }
+
+  .return-box form {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .return-box input[type='text'] {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    font-size: 0.9rem;
+  }
+
+  .return-box button {
+    background: #1d4ed8;
+    color: #ffffff;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .return-box button:hover {
+    background: #1e40af;
   }
 </style>

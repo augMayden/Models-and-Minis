@@ -82,6 +82,44 @@ const log = (label, ok, extra = '') =>
   const sellerOrders = await call('GET', '/api/orders', { token: sellerTok });
   check('seller sees orders', sellerOrders.status === 200 && Array.isArray(sellerOrders.data));
 
+  // ---- returns feature ----
+  // Use the order this run just created: guaranteed within the 7-day window
+  // and free of pre-existing returns (the seeder attaches a sample return to
+  // one of ITS orders).
+  const freshOrder = checkout.data && checkout.data.items && checkout.data.items.length > 0
+    ? checkout.data
+    : null;
+
+  if (freshOrder) {
+    const itemId = freshOrder.items[0]._id;
+
+    const noAuth = await call('POST', `/api/orders/${freshOrder._id}/items/${itemId}/return`, { body: { reason: 'nope' } });
+    check('return requires auth', noAuth.status === 401);
+
+    const wrongRole = await call('POST', `/api/orders/${freshOrder._id}/items/${itemId}/return`, { token: sellerTok, body: { reason: 'nope' } });
+    check('return blocked for seller role', wrongRole.status === 403);
+
+    const returned = await call('POST', `/api/orders/${freshOrder._id}/items/${itemId}/return`, { token: buyerTok, body: { reason: 'arrived damaged' } });
+    check('buyer requests return', returned.status === 201 && returned.data.status === 'Pending', `refund=${returned.data._id}`);
+
+    const dupReturn = await call('POST', `/api/orders/${freshOrder._id}/items/${itemId}/return`, { token: buyerTok, body: { reason: 'again' } });
+    check('duplicate return rejected', dupReturn.status === 409);
+
+    const badItem = await call('POST', `/api/orders/${freshOrder._id}/items/000000000000000000000000/return`, { token: buyerTok, body: {} });
+    check('return unknown item 404', badItem.status === 404);
+
+    const otherOrder = await call('POST', `/api/orders/000000000000000000000000/items/${itemId}/return`, { token: buyerTok, body: {} });
+    check('return unknown order 404', otherOrder.status === 404);
+
+    const myReturns = await call('GET', '/api/orders/returns', { token: buyerTok });
+    check('buyer lists own returns', myReturns.status === 200 && myReturns.data.some((r) => String(r._id) === String(returned.data._id)));
+
+    const sellerReturns = await call('GET', '/api/orders/returns', { token: sellerTok });
+    check('seller can list returns', sellerReturns.status === 200 && Array.isArray(sellerReturns.data));
+  } else {
+    check('return flow (no orders to exercise)', false, 'no order with items found');
+  }
+
   // admin overview
   const overview = await call('GET', '/api/admin/overview', { token: adminTok });
   check('admin overview', overview.status === 200 && typeof overview.data.users === 'number', JSON.stringify(overview.data));
