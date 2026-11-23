@@ -150,7 +150,7 @@ export const load = async ({ cookies, parent }) => {
       error: err instanceof Error ? err.message : 'Could not load your sales.'
     };
   }
-};;
+};
 
 export const actions = {
   /** Seller accepts a buyer's return request. */

@@ -121,6 +121,12 @@ sellerSchema.methods.viewOrders = function () {
 sellerSchema.methods.resolveRefundForSeller = async function (refundId) {
   const RefundRequest = mongoose.model('RefundRequest');
 
+  // Malformed ids would make findById throw a CastError (500); treat them
+  // like any other not-found request.
+  if (!mongoose.isValidObjectId(refundId)) {
+    throw Object.assign(new Error('Refund request not found for your items'), { status: 404 });
+  }
+
   const refund = await RefundRequest.findById(refundId).populate('order', 'buyer items.seller');
   const sellerIds = refund?.order?.items?.map((i) => String(i.seller)) ?? [];
   if (!refund || !sellerIds.includes(String(this._id))) {
@@ -200,7 +206,6 @@ const buyerSchema = new mongoose.Schema({
   paymentMethods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }],
 });
 
-
 buyerSchema.methods.addToCart = async function ({ listingId, quantity = 1 }) {
   const Listing = mongoose.model('Listing');
   const Cart = mongoose.model('Cart');
@@ -246,12 +251,7 @@ buyerSchema.methods.compareListings = async function (listingIds = []) {
 
 // How long after purchase an item may be returned to the seller.
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-// requestReturn(orderId, orderItemId, reason) : RefundRequest
-// Buyer asks to return one item from their own order to the seller.
-// Rules: order must belong to this buyer, the item must be in it, the
-// purchase must be within the 7-day return window, and each item can only
-// have one open return. Creates a Pending RefundRequest for the seller to
-// decide and notifies the buyer.
+
 // checkout(paymentId) — minimal end-to-end cart -> order. Extend as needed.
 buyerSchema.methods.checkout = async function (paymentId) {
   const Cart = mongoose.model('Cart');
@@ -306,6 +306,12 @@ buyerSchema.methods.checkout = async function (paymentId) {
   return order;
 };
 
+// requestReturn(orderId, orderItemId, reason) : RefundRequest
+// Buyer asks to return one item from their own order to the seller.
+// Rules: order must belong to this buyer, the item must be in it, the
+// purchase must be within the 7-day return window, and each item can only
+// have one open return. Creates a Pending RefundRequest for the seller to
+// decide and notifies the buyer.
 buyerSchema.methods.requestReturn = async function (orderId, orderItemId, reason = '') {
   const Order = mongoose.model('Order');
   const RefundRequest = mongoose.model('RefundRequest');
