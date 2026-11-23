@@ -64,8 +64,12 @@ const log = (label, ok, extra = '') =>
 
   // buyer adds to cart — use the listing this run created, so the later
   // return checks are deterministic about which seller owns the item.
-  const added = await call('POST', '/api/cart/items', { token: buyerTok, body: { listingId: created.data._id, quantity: 2 } });
+  // Two separate lines (add, then add again) so the order has 2 items and
+  // the escalate path below has something to work on.
+  const added = await call('POST', '/api/cart/items', { token: buyerTok, body: { listingId: created.data._id, quantity: 1 } });
   check('add to cart', added.status === 201 && added.data.items.length >= 1, `total=${added.data.total}`);
+  const added2 = await call('POST', '/api/cart/items', { token: buyerTok, body: { listingId: firstListing._id, quantity: 1 } });
+  check('add second item to cart', added2.status === 201 && added2.data.items.length >= 2, `total=${added2.data.total}`);
 
   // buyer cannot access admin
   const forbidden = await call('GET', '/api/admin/overview', { token: buyerTok });
@@ -120,6 +124,33 @@ const log = (label, ok, extra = '') =>
       'seller sees returns for their items',
       sellerReturns.status === 200 && sellerReturns.data.some((r) => String(r._id) === String(returned.data._id))
     );
+
+    // ---- seller decision on the return ----
+    const refundId = returned.data._id;
+
+    const buyerDecide = await call('POST', `/api/orders/refunds/${refundId}/accept`, { token: buyerTok });
+    check('buyer cannot decide refunds', buyerDecide.status === 403);
+
+    const otherSeller = await call('POST', `/api/orders/refunds/${refundId}/accept`, { token: adminTok });
+    check('admin cannot use seller endpoint', otherSeller.status === 403);
+
+    const accepted = await call('POST', `/api/orders/refunds/${refundId}/accept`, { token: sellerTok });
+    check('seller accepts return', accepted.status === 200 && accepted.data.status === 'Approved', `status=${accepted.data.status}`);
+
+    const reAccept = await call('POST', `/api/orders/refunds/${refundId}/accept`, { token: sellerTok });
+    check('deciding twice rejected', reAccept.status === 409);
+
+    // new return on a second item, then escalate it
+    if (freshOrder.items[1]) {
+      const returned2 = await call('POST', `/api/orders/${freshOrder._id}/items/${freshOrder.items[1]._id}/return`, { token: buyerTok, body: { reason: 'wrong size' } });
+      check('second item return', returned2.status === 201, `refund=${returned2.data?._id}`);
+      const escalated = await call('POST', `/api/orders/refunds/${returned2.data._id}/escalate`, { token: sellerTok, body: { note: 'buyer unreachable, need ruling' } });
+      check('seller escalates to admin', escalated.status === 200 && escalated.data.status === 'NeedsAdmin', `status=${escalated.data.status}`);
+      const afterEscalate = await call('POST', `/api/orders/refunds/${returned2.data._id}/accept`, { token: sellerTok });
+      check('cannot decide after escalation', afterEscalate.status === 409);
+    } else {
+      check('escalate path (no second item)', false, 'order had a single item');
+    }
   } else {
     check('return flow (no orders to exercise)', false, 'no order with items found');
   }

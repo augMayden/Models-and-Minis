@@ -115,6 +115,54 @@ sellerSchema.methods.viewOrders = function () {
   return mongoose.model('Order').find({ 'items.seller': this._id });
 };
 
+// resolveRefundForSeller(orderId, refundId) : RefundRequest
+// Loads a refund request the seller is allowed to act on: it must belong
+// to an order containing an item sold by THIS seller. Throws 404 otherwise.
+sellerSchema.methods.resolveRefundForSeller = async function (refundId) {
+  const RefundRequest = mongoose.model('RefundRequest');
+
+  const refund = await RefundRequest.findById(refundId).populate('order', 'buyer items.seller');
+  const sellerIds = refund?.order?.items?.map((i) => String(i.seller)) ?? [];
+  if (!refund || !sellerIds.includes(String(this._id))) {
+    throw Object.assign(new Error('Refund request not found for your items'), { status: 404 });
+  }
+  return refund;
+};
+
+// decideRefund(refundId, decision, note, adminOrSeller) : RefundRequest
+// Seller decision on a buyer's return: accept (approve) or escalate to an
+// admin. Only Pending requests can be decided; already-escalated ones go to
+// admin review, not back through the seller.
+sellerSchema.methods.decideRefund = async function (refundId, decision, note = '') {
+  const refund = await this.resolveRefundForSeller(refundId);
+
+  if (refund.status !== 'Pending') {
+    throw Object.assign(new Error(`This request was already ${refund.status === 'NeedsAdmin' ? 'escalated to an admin' : refund.status.toLowerCase()}`), {
+      status: 409,
+    });
+  }
+
+  if (decision === 'accept') {
+    refund.approve();
+  } else if (decision === 'escalate') {
+    refund.escalate(note);
+  } else {
+    throw Object.assign(new Error('decision must be "accept" or "escalate"'), { status: 400 });
+  }
+
+  await refund.save();
+  await mongoose.model('Notification').create({
+    recipient: refund.order.buyer,
+    recipientModel: 'Buyer',
+    type: 'return',
+    message:
+      decision === 'accept'
+        ? 'Your return request was accepted by the seller.'
+        : 'Your return request was passed to an admin for review.',
+  });
+  return refund;
+};
+
 const Seller = User.discriminator('Seller', sellerSchema);
 
 // ---------------- Admin ----------------
@@ -151,6 +199,7 @@ const buyerSchema = new mongoose.Schema({
   shippingAddresses: { type: [addressSchema], default: [] },
   paymentMethods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }],
 });
+
 
 buyerSchema.methods.addToCart = async function ({ listingId, quantity = 1 }) {
   const Listing = mongoose.model('Listing');
@@ -197,13 +246,66 @@ buyerSchema.methods.compareListings = async function (listingIds = []) {
 
 // How long after purchase an item may be returned to the seller.
 const RETURN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
 // requestReturn(orderId, orderItemId, reason) : RefundRequest
 // Buyer asks to return one item from their own order to the seller.
 // Rules: order must belong to this buyer, the item must be in it, the
 // purchase must be within the 7-day return window, and each item can only
 // have one open return. Creates a Pending RefundRequest for the seller to
 // decide and notifies the buyer.
+// checkout(paymentId) — minimal end-to-end cart -> order. Extend as needed.
+buyerSchema.methods.checkout = async function (paymentId) {
+  const Cart = mongoose.model('Cart');
+  const Order = mongoose.model('Order');
+  const Listing = mongoose.model('Listing');
+
+  const cart = await Cart.findOne({ buyer: this._id }).populate('items.listing');
+  if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
+
+  // Validate every line BEFORE mutating anything, so a rejected item (unavailable,
+  // out of stock, or self-purchased) can't leave a half-processed checkout with
+  // stock already decremented for earlier lines.
+  const items = [];
+  const earningsBySeller = new Map();
+  for (const it of cart.items) {
+    const listing = it.listing;
+    if (!listing || !listing.isAvailable() || listing.stock < it.quantity)
+      throw new Error(`Unavailable: ${listing ? listing.name : 'an item in your cart'}`);
+    if (String(listing.seller) === String(this._id))
+      throw new Error(`You cannot purchase your own listing: ${listing.name}`);
+    items.push({
+      listing: listing._id,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      seller: listing.seller,
+    });
+    const key = String(listing.seller);
+    earningsBySeller.set(key, (earningsBySeller.get(key) ?? 0) + it.unitPrice * it.quantity);
+  }
+
+  for (const it of cart.items) {
+    it.listing.stock -= it.quantity;
+    await it.listing.save();
+  }
+
+  const order = await Order.create({
+    buyer: this._id,
+    items,
+    total: cart.total,
+    payment: paymentId,
+  });
+
+  // Credit seller earnings at checkout (pay-at-checkout model).
+  for (const [sellerId, amount] of earningsBySeller) {
+    await Seller.findByIdAndUpdate(sellerId, { $inc: { earnings: amount } });
+  }
+
+  cart.items = [];
+  cart.calculateTotal();
+  await cart.save();
+
+  return order;
+};
+
 buyerSchema.methods.requestReturn = async function (orderId, orderItemId, reason = '') {
   const Order = mongoose.model('Order');
   const RefundRequest = mongoose.model('RefundRequest');
@@ -257,60 +359,6 @@ buyerSchema.methods.requestReturn = async function (orderId, orderItemId, reason
   });
 
   return refund;
-};
-
-// checkout(paymentId) — minimal end-to-end cart -> order. Extend as needed.
-buyerSchema.methods.checkout = async function (paymentId) {
-  const Cart = mongoose.model('Cart');
-  const Order = mongoose.model('Order');
-  const Listing = mongoose.model('Listing');
-
-  const cart = await Cart.findOne({ buyer: this._id }).populate('items.listing');
-  if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
-
-  // Validate every line BEFORE mutating anything, so a rejected item (unavailable,
-  // out of stock, or self-purchased) can't leave a half-processed checkout with
-  // stock already decremented for earlier lines.
-  const items = [];
-  const earningsBySeller = new Map();
-  for (const it of cart.items) {
-    const listing = it.listing;
-    if (!listing || !listing.isAvailable() || listing.stock < it.quantity)
-      throw new Error(`Unavailable: ${listing ? listing.name : 'an item in your cart'}`);
-    if (String(listing.seller) === String(this._id))
-      throw new Error(`You cannot purchase your own listing: ${listing.name}`);
-    items.push({
-      listing: listing._id,
-      quantity: it.quantity,
-      unitPrice: it.unitPrice,
-      seller: listing.seller,
-    });
-    const key = String(listing.seller);
-    earningsBySeller.set(key, (earningsBySeller.get(key) ?? 0) + it.unitPrice * it.quantity);
-  }
-
-  for (const it of cart.items) {
-    it.listing.stock -= it.quantity;
-    await it.listing.save();
-  }
-
-  const order = await Order.create({
-    buyer: this._id,
-    items,
-    total: cart.total,
-    payment: paymentId,
-  });
-
-  // Credit seller earnings at checkout (pay-at-checkout model).
-  for (const [sellerId, amount] of earningsBySeller) {
-    await Seller.findByIdAndUpdate(sellerId, { $inc: { earnings: amount } });
-  }
-
-  cart.items = [];
-  cart.calculateTotal();
-  await cart.save();
-
-  return order;
 };
 
 const Buyer = User.discriminator('Buyer', buyerSchema);

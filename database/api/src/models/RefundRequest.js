@@ -7,11 +7,12 @@ const refundRequestSchema = new mongoose.Schema(
     reason: { type: String, required: true },
     status: {
       type: String,
-      enum: ['Pending', 'Approved', 'Denied'],
+      enum: ['Pending', 'Approved', 'Denied', 'NeedsAdmin'],
       default: 'Pending',
     },
     decisionReason: { type: String, default: '' },
     decidedAt: { type: Date },
+    decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
@@ -24,6 +25,13 @@ refundRequestSchema.methods.approve = function () {
 
 refundRequestSchema.methods.deny = function (reason = '') {
   this.status = 'Denied';
+  this.decisionReason = reason;
+  this.decidedAt = new Date();
+  return this;
+};
+
+refundRequestSchema.methods.escalate = function (reason = '') {
+  this.status = 'NeedsAdmin';
   this.decisionReason = reason;
   this.decidedAt = new Date();
   return this;

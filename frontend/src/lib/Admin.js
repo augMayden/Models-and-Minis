@@ -172,6 +172,33 @@ export function getOrders(token) {
 
 /**
  * @param {string} token
+ * @param {string} refundId
+ */
+export function acceptRefund(token, refundId) {
+  return adminRequest(`/api/orders/refunds/${encodeURIComponent(refundId)}/accept`, token, 'POST', {});
+}
+
+/**
+ * @param {string} token
+ * @param {string} refundId
+ * @param {string} [note]
+ */
+export function escalateRefund(token, refundId, note = '') {
+  return adminRequest(
+    `/api/orders/refunds/${encodeURIComponent(refundId)}/escalate`,
+    token,
+    'POST',
+    { note }
+  );
+}
+
+/** @param {string} token */
+export function getReturns(token) {
+  return adminRequest('/api/orders/returns', token);
+}
+
+/**
+ * @param {string} token
  * @param {string} orderId
  * @param {string} orderItemId
  * @param {string} [reason]

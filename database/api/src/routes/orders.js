@@ -66,6 +66,27 @@ router.get('/returns', auth, async (req, res, next) => {
   }
 });
 
+// POST /api/orders/refunds/:refundId/accept  (Seller: accept a buyer's return)
+router.post('/refunds/:refundId/accept', auth, requireRole('Seller'), async (req, res, next) => {
+  try {
+    const refund = await req.user.decideRefund(req.params.refundId, 'accept');
+    res.json(refund);
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /api/orders/refunds/:refundId/escalate  { note? }  (Seller: hand to an admin)
+router.post('/refunds/:refundId/escalate', auth, requireRole('Seller'), async (req, res, next) => {
+  try {
+    const note = typeof req.body?.note === 'string' ? req.body.note : '';
+    const refund = await req.user.decideRefund(req.params.refundId, 'escalate', note);
+    res.json(refund);
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET /api/orders/:id
 router.get('/:id', auth, async (req, res, next) => {
   try {
