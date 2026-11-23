@@ -73,6 +73,10 @@
   {:else if data.orders.length === 0}
     <p>You haven't made any sales yet. <a href="/listings/new">Post listings</a> to get started.</p>
   {:else}
+    {#if form?.message}
+      <p class="notice" role="status">{form.message}</p>
+    {/if}
+
     {#each data.orders as order (order._id)}
       <section class="order">
         <div class="order-head">
@@ -96,10 +100,6 @@
             </li>
           {/each}
         </ul>
-
-        {#if form?.message}
-          <p class="notice" role="status">{form.message}</p>
-        {/if}
 
         {#if order.refunds.length > 0}
           <div class="refund-panel">
